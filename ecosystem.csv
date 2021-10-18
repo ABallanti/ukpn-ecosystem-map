@@ -1,0 +1,17 @@
+domain,data_class,critical_data_entity
+Asset,Asset Register,Characteristics
+Asset,Asset Register,Attribution
+Asset,Asset Register,Measurements
+Asset,Asset Register,Condition
+Asset,Asset Register,Defects
+Network,Geospatial,Sites
+Network,Geospatial,Circuits
+Network,Geospatial,Location
+Network,Geospatial,Connectivity
+Network,Operational,SCADA
+Network,Operational,Faults
+Network,Time Series,xxx
+Netwotk,Capacity,Load Capacity
+Netwotk,Capacity,Generation Capacity
+Netwotk,Capacity,Load Indices
+Network,Utilisation,Maximum Demand

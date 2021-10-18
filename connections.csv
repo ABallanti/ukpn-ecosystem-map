@@ -1,0 +1,23 @@
+From,To
+Asset,Asset Register
+Asset Register,Characteristics
+Asset Register,Attribution
+Asset Register,Measurements
+Asset Register,Condition
+Asset Register,Defects
+Network,Geospatial
+Geospatial,Sites
+Geospatial,Circuits
+Geospatial,Location
+Geospatial,Connectivity
+Network,Operational
+Operational,SCADA
+Operational,Faults
+Network,Time Series
+Time Series,xxx
+Network,Capacity
+Capacity,Load Capacity
+Capacity,Generation Capacity
+Capacity,Load Indices
+Network,Utilisation
+Utilisation,Maximum Demand

@@ -1,0 +1,26 @@
+node,parent
+UKPN,
+Asset,UKPN
+Network,UKPN
+Asset Register,Asset
+Characteristics,Asset Register
+Attribution,Asset Register
+Measurements,Asset Register
+Condition,Asset Register
+Defects,Asset Register
+Geospatial,Network
+Sites,Geospatial
+Circuits,Geospatial
+Location,Geospatial
+Connectivity,Geospatial
+Operational,Network
+SCADA,Operational
+Faults,Operational
+Time Series,Network
+xxx,Time Series
+Capacity,Network
+Load Capacity,Capacity
+Generation Capacity,Capacity
+Load Indices,Capacity
+Utilisation,Network
+Maximum Demand,Utilisation

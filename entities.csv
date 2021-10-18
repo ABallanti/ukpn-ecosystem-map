@@ -1,0 +1,25 @@
+Label,Type
+Asset,Domain
+Network,Domain
+Asset Register,Data Class
+Geospatial,Data Class
+Operational,Data Class
+Time Series,Data Class
+Capacity,Data Class
+Utilisation,Data Class
+Characteristics,Critical Data Entity
+Attribution,Critical Data Entity
+Measurements,Critical Data Entity
+Condition,Critical Data Entity
+Defects,Critical Data Entity
+Sites,Critical Data Entity
+Circuits,Critical Data Entity
+Location,Critical Data Entity
+Connectivity,Critical Data Entity
+SCADA,Critical Data Entity
+Faults,Critical Data Entity
+xxx,Critical Data Entity
+Load Capacity,Critical Data Entity
+Generation Capacity,Critical Data Entity
+Load Indices,Critical Data Entity
+Maximum Demand,Critical Data Entity
