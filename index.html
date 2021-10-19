@@ -31,7 +31,9 @@
       <label class="tab-top"for="tab-3">
         <h1>Sunburst</h1>
       </label>
-      <div id="sunburst" class="tab-content"></div>
+      <div id="sunburst" class="tab-content">
+        <p>NB the layout of this is not quite correct yet</p>
+      </div>
     </section>
     <section class="tab">
       <input type="radio" class="tab-selector" id="tab-4" name="tab" />
@@ -339,6 +341,12 @@
   * {
     padding: 0;
     margin: 0;
+  }
+
+  body > * {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   main section h1 {
