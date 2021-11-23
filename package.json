@@ -30,8 +30,13 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.4",
     "@rollup/plugin-babel": "^5.3.0",
+    "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-node-resolve": "^13.0.6",
     "rollup": "^2.60.1",
     "rollup-cli": "^1.0.9"
+  },
+  "dependencies": {
+    "core-js": "^3.19.1",
+    "regenerator-runtime": "^0.13.9"
   }
 }
