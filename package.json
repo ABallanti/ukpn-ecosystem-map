@@ -1,0 +1,32 @@
+{
+  "name": "ukpn-ecosystem-visualisation",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Visualisation of the UKPN Internal Ecosystem Map",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup --config rollup.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-innovations/ukpn-ecosystem-map.git"
+  },
+  "keywords": [
+    "UKPN",
+    "data",
+    "visualisation",
+    "open",
+    "ecosystem"
+  ],
+  "author": "Giles Dring <giles.dring@open-innovations.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/open-innovations/ukpn-ecosystem-map/issues"
+  },
+  "homepage": "https://github.com/open-innovations/ukpn-ecosystem-map#readme",
+  "devDependencies": {
+    "rollup": "^2.60.1",
+    "rollup-cli": "^1.0.9"
+  }
+}
