@@ -69,18 +69,8 @@ main section h1 {
 .tab-selector:checked ~ .tab-top {
   background-color: #888;
 }
-.root {
-  fill: white;
-}
-.domain {
-  fill: yellow;
-}
-.data-class {
-  fill: blue;
-}
-.critical-data-entity {
-  fill: green;
-}
+
+/* Tooltip */
 .tooltip {
   background-color: red;
   padding: 1em;
@@ -91,4 +81,23 @@ main section h1 {
 }
 .tooltip.hide {
   display: none;
+}
+
+/* Graph */
+#nodes {
+  stroke: #111;
+  stroke-width: 1px;
+}
+#nodes .domain {
+  fill: yellow;
+}
+#nodes .data-class {
+  fill: blue;
+}
+#nodes .critical-data-entity {
+  fill: green;
+}
+#edges {
+  stroke: #999;
+  stroke-opacity: 0.6;
 }

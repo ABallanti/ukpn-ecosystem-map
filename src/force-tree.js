@@ -4,8 +4,8 @@ import * as d3 from './lib/d3';
 export const forceTree = (ecosystem, element) => {
   const width = 200;
   const height = width;
-  const links = ecosystem.links();
-  const nodes = ecosystem.descendants();
+  const links = ecosystem.links().filter(d => d.source.depth > 0);
+  const nodes = ecosystem.descendants().filter(d => d.depth > 0);
 
   const simulation = d3
     .forceSimulation(nodes)
@@ -25,13 +25,16 @@ export const forceTree = (ecosystem, element) => {
     .append('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
-  const link = svg
+  const graph = svg.append('g')
+    .attr('id', 'graph');
+
+  const link = graph
     .append('g')
-    .attr('stroke', '#999')
-    .attr('stroke-opacity', 0.6)
+    .attr('id', 'edges')
     .selectAll('line')
     .data(links)
-    .join('line');
+    .join('line')
+    .attr('class', d => d.source.data.type);
 
   const drag = (simulation) => {
     function dragstarted(event, d) {
@@ -74,8 +77,9 @@ export const forceTree = (ecosystem, element) => {
     tooltip.classed('hide', !entity.selected);
   };
 
-  const node = svg
+  const node = graph
     .append('g')
+    .attr('id', 'nodes')
     .selectAll('circle')
     .data(nodes)
     .join('circle')
@@ -88,6 +92,15 @@ export const forceTree = (ecosystem, element) => {
       node.enter().selected = false;
       i.selected = true;
     });
+
+  function zoomed({ transform }) {
+    graph.attr("transform", transform);
+  }
+
+  svg.call(d3.zoom()
+    .extent([[0, 0], [width, height]])
+    .scaleExtent([0.5, 4])
+    .on("zoom", zoomed));
 
   const nodePath = (d) =>
     d
@@ -107,8 +120,6 @@ export const forceTree = (ecosystem, element) => {
 
     node.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
   });
-
-  // WAT DIS? invalidation.then(() => simulation.stop());
 
   return svg.node();
 };
