@@ -1,16 +1,17 @@
+import { drag } from 'd3-drag';
+import { csv } from 'd3-fetch';
 import {
-  csv,
-  drag,
   forceLink,
   forceManyBody,
   forceSimulation,
   forceX,
-  forceY,
-  select,
-  stratify,
-} from 'd3';
+  forceY
+} from 'd3-force';
+import { stratify } from 'd3-hierarchy';
+import { select } from 'd3-selection';
 
-export const d3 = {
+
+export {
   csv,
   drag,
   forceLink,

@@ -3,7 +3,7 @@ import { radialTree } from './radial-tree';
 import { sunburst } from './sunburst';
 import { packChart } from './pack-chart';
 
-import { d3 } from './lib/d3';
+import * as d3 from './lib/d3';
 
 d3.csv('ecosystem-tree.csv').then(data => {
   const ecosystem = d3.stratify().id(x => x.id).parentId(x => x.parent)(data);

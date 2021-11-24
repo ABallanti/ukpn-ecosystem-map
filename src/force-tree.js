@@ -1,4 +1,4 @@
-import { d3 }from './lib/d3';
+import * as d3 from './lib/d3';
 
 // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 export const forceTree = (ecosystem, element) => {

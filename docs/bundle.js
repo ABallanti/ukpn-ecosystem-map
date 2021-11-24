@@ -1771,158 +1771,6 @@
 	  }
 	});
 
-	class InternMap extends Map {
-	  constructor(entries, key = keyof) {
-	    super();
-	    Object.defineProperties(this, {
-	      _intern: {
-	        value: new Map()
-	      },
-	      _key: {
-	        value: key
-	      }
-	    });
-	    if (entries != null) for (const [key, value] of entries) this.set(key, value);
-	  }
-
-	  get(key) {
-	    return super.get(intern_get(this, key));
-	  }
-
-	  has(key) {
-	    return super.has(intern_get(this, key));
-	  }
-
-	  set(key, value) {
-	    return super.set(intern_set(this, key), value);
-	  }
-
-	  delete(key) {
-	    return super.delete(intern_delete(this, key));
-	  }
-
-	}
-
-	function intern_get({
-	  _intern,
-	  _key
-	}, value) {
-	  const key = _key(value);
-
-	  return _intern.has(key) ? _intern.get(key) : value;
-	}
-
-	function intern_set({
-	  _intern,
-	  _key
-	}, value) {
-	  const key = _key(value);
-
-	  if (_intern.has(key)) return _intern.get(key);
-
-	  _intern.set(key, value);
-
-	  return value;
-	}
-
-	function intern_delete({
-	  _intern,
-	  _key
-	}, value) {
-	  const key = _key(value);
-
-	  if (_intern.has(key)) {
-	    value = _intern.get(key);
-
-	    _intern.delete(key);
-	  }
-
-	  return value;
-	}
-
-	function keyof(value) {
-	  return value !== null && typeof value === "object" ? value.valueOf() : value;
-	}
-
-	function identity$3(x) {
-	  return x;
-	}
-
-	function group(values, ...keys) {
-	  return nest(values, identity$3, identity$3, keys);
-	}
-
-	function nest(values, map, reduce, keys) {
-	  return function regroup(values, i) {
-	    if (i >= keys.length) return reduce(values);
-	    const groups = new InternMap();
-	    const keyof = keys[i++];
-	    let index = -1;
-
-	    for (const value of values) {
-	      const key = keyof(value, ++index, values);
-	      const group = groups.get(key);
-	      if (group) group.push(value);else groups.set(key, [value]);
-	    }
-
-	    for (const [key, values] of groups) {
-	      groups.set(key, regroup(values, i));
-	    }
-
-	    return map(groups);
-	  }(values, 0);
-	}
-
-	var e10 = Math.sqrt(50),
-	    e5 = Math.sqrt(10),
-	    e2 = Math.sqrt(2);
-	function ticks(start, stop, count) {
-	  var reverse,
-	      i = -1,
-	      n,
-	      ticks,
-	      step;
-	  stop = +stop, start = +start, count = +count;
-	  if (start === stop && count > 0) return [start];
-	  if (reverse = stop < start) n = start, start = stop, stop = n;
-	  if ((step = tickIncrement(start, stop, count)) === 0 || !isFinite(step)) return [];
-
-	  if (step > 0) {
-	    let r0 = Math.round(start / step),
-	        r1 = Math.round(stop / step);
-	    if (r0 * step < start) ++r0;
-	    if (r1 * step > stop) --r1;
-	    ticks = new Array(n = r1 - r0 + 1);
-
-	    while (++i < n) ticks[i] = (r0 + i) * step;
-	  } else {
-	    step = -step;
-	    let r0 = Math.round(start * step),
-	        r1 = Math.round(stop * step);
-	    if (r0 / step < start) ++r0;
-	    if (r1 / step > stop) --r1;
-	    ticks = new Array(n = r1 - r0 + 1);
-
-	    while (++i < n) ticks[i] = (r0 + i) / step;
-	  }
-
-	  if (reverse) ticks.reverse();
-	  return ticks;
-	}
-	function tickIncrement(start, stop, count) {
-	  var step = (stop - start) / Math.max(0, count),
-	      power = Math.floor(Math.log(step) / Math.LN10),
-	      error = step / Math.pow(10, power);
-	  return power >= 0 ? (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1) * Math.pow(10, power) : -Math.pow(10, -power) / (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1);
-	}
-	function tickStep(start, stop, count) {
-	  var step0 = Math.abs(stop - start) / Math.max(0, count),
-	      step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
-	      error = step0 / step1;
-	  if (error >= e10) step1 *= 10;else if (error >= e5) step1 *= 5;else if (error >= e2) step1 *= 2;
-	  return stop < start ? -step1 : step1;
-	}
-
 	var noop = {
 	  value: () => {}
 	};
@@ -3293,6 +3141,3271 @@
 	  return drag;
 	}
 
+	var EOL = {},
+	    EOF = {},
+	    QUOTE = 34,
+	    NEWLINE = 10,
+	    RETURN = 13;
+
+	function objectConverter(columns) {
+	  return new Function("d", "return {" + columns.map(function (name, i) {
+	    return JSON.stringify(name) + ": d[" + i + "] || \"\"";
+	  }).join(",") + "}");
+	}
+
+	function customConverter(columns, f) {
+	  var object = objectConverter(columns);
+	  return function (row, i) {
+	    return f(object(row), i, columns);
+	  };
+	} // Compute unique columns in order of discovery.
+
+
+	function inferColumns(rows) {
+	  var columnSet = Object.create(null),
+	      columns = [];
+	  rows.forEach(function (row) {
+	    for (var column in row) {
+	      if (!(column in columnSet)) {
+	        columns.push(columnSet[column] = column);
+	      }
+	    }
+	  });
+	  return columns;
+	}
+
+	function pad(value, width) {
+	  var s = value + "",
+	      length = s.length;
+	  return length < width ? new Array(width - length + 1).join(0) + s : s;
+	}
+
+	function formatYear(year) {
+	  return year < 0 ? "-" + pad(-year, 6) : year > 9999 ? "+" + pad(year, 6) : pad(year, 4);
+	}
+
+	function formatDate(date) {
+	  var hours = date.getUTCHours(),
+	      minutes = date.getUTCMinutes(),
+	      seconds = date.getUTCSeconds(),
+	      milliseconds = date.getUTCMilliseconds();
+	  return isNaN(date) ? "Invalid Date" : formatYear(date.getUTCFullYear()) + "-" + pad(date.getUTCMonth() + 1, 2) + "-" + pad(date.getUTCDate(), 2) + (milliseconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "." + pad(milliseconds, 3) + "Z" : seconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "Z" : minutes || hours ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + "Z" : "");
+	}
+
+	function dsvFormat (delimiter) {
+	  var reFormat = new RegExp("[\"" + delimiter + "\n\r]"),
+	      DELIMITER = delimiter.charCodeAt(0);
+
+	  function parse(text, f) {
+	    var convert,
+	        columns,
+	        rows = parseRows(text, function (row, i) {
+	      if (convert) return convert(row, i - 1);
+	      columns = row, convert = f ? customConverter(row, f) : objectConverter(row);
+	    });
+	    rows.columns = columns || [];
+	    return rows;
+	  }
+
+	  function parseRows(text, f) {
+	    var rows = [],
+	        // output rows
+	    N = text.length,
+	        I = 0,
+	        // current character index
+	    n = 0,
+	        // current line number
+	    t,
+	        // current token
+	    eof = N <= 0,
+	        // current token followed by EOF?
+	    eol = false; // current token followed by EOL?
+	    // Strip the trailing newline.
+
+	    if (text.charCodeAt(N - 1) === NEWLINE) --N;
+	    if (text.charCodeAt(N - 1) === RETURN) --N;
+
+	    function token() {
+	      if (eof) return EOF;
+	      if (eol) return eol = false, EOL; // Unescape quotes.
+
+	      var i,
+	          j = I,
+	          c;
+
+	      if (text.charCodeAt(j) === QUOTE) {
+	        while (I++ < N && text.charCodeAt(I) !== QUOTE || text.charCodeAt(++I) === QUOTE);
+
+	        if ((i = I) >= N) eof = true;else if ((c = text.charCodeAt(I++)) === NEWLINE) eol = true;else if (c === RETURN) {
+	          eol = true;
+	          if (text.charCodeAt(I) === NEWLINE) ++I;
+	        }
+	        return text.slice(j + 1, i - 1).replace(/""/g, "\"");
+	      } // Find next delimiter or newline.
+
+
+	      while (I < N) {
+	        if ((c = text.charCodeAt(i = I++)) === NEWLINE) eol = true;else if (c === RETURN) {
+	          eol = true;
+	          if (text.charCodeAt(I) === NEWLINE) ++I;
+	        } else if (c !== DELIMITER) continue;
+	        return text.slice(j, i);
+	      } // Return last token before EOF.
+
+
+	      return eof = true, text.slice(j, N);
+	    }
+
+	    while ((t = token()) !== EOF) {
+	      var row = [];
+
+	      while (t !== EOL && t !== EOF) row.push(t), t = token();
+
+	      if (f && (row = f(row, n++)) == null) continue;
+	      rows.push(row);
+	    }
+
+	    return rows;
+	  }
+
+	  function preformatBody(rows, columns) {
+	    return rows.map(function (row) {
+	      return columns.map(function (column) {
+	        return formatValue(row[column]);
+	      }).join(delimiter);
+	    });
+	  }
+
+	  function format(rows, columns) {
+	    if (columns == null) columns = inferColumns(rows);
+	    return [columns.map(formatValue).join(delimiter)].concat(preformatBody(rows, columns)).join("\n");
+	  }
+
+	  function formatBody(rows, columns) {
+	    if (columns == null) columns = inferColumns(rows);
+	    return preformatBody(rows, columns).join("\n");
+	  }
+
+	  function formatRows(rows) {
+	    return rows.map(formatRow).join("\n");
+	  }
+
+	  function formatRow(row) {
+	    return row.map(formatValue).join(delimiter);
+	  }
+
+	  function formatValue(value) {
+	    return value == null ? "" : value instanceof Date ? formatDate(value) : reFormat.test(value += "") ? "\"" + value.replace(/"/g, "\"\"") + "\"" : value;
+	  }
+
+	  return {
+	    parse: parse,
+	    parseRows: parseRows,
+	    format: format,
+	    formatBody: formatBody,
+	    formatRows: formatRows,
+	    formatRow: formatRow,
+	    formatValue: formatValue
+	  };
+	}
+
+	var csv$1 = dsvFormat(",");
+	var csvParse = csv$1.parse;
+
+	function responseText(response) {
+	  if (!response.ok) throw new Error(response.status + " " + response.statusText);
+	  return response.text();
+	}
+
+	function text (input, init) {
+	  return fetch(input, init).then(responseText);
+	}
+
+	function dsvParse(parse) {
+	  return function (input, init, row) {
+	    if (arguments.length === 2 && typeof init === "function") row = init, init = undefined;
+	    return text(input, init).then(function (response) {
+	      return parse(response, row);
+	    });
+	  };
+	}
+	var csv = dsvParse(csvParse);
+
+	function tree_add (d) {
+	  const x = +this._x.call(null, d),
+	        y = +this._y.call(null, d);
+	  return add(this.cover(x, y), x, y, d);
+	}
+
+	function add(tree, x, y, d) {
+	  if (isNaN(x) || isNaN(y)) return tree; // ignore invalid points
+
+	  var parent,
+	      node = tree._root,
+	      leaf = {
+	    data: d
+	  },
+	      x0 = tree._x0,
+	      y0 = tree._y0,
+	      x1 = tree._x1,
+	      y1 = tree._y1,
+	      xm,
+	      ym,
+	      xp,
+	      yp,
+	      right,
+	      bottom,
+	      i,
+	      j; // If the tree is empty, initialize the root as a leaf.
+
+	  if (!node) return tree._root = leaf, tree; // Find the existing leaf for the new point, or add it.
+
+	  while (node.length) {
+	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
+	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
+	    if (parent = node, !(node = node[i = bottom << 1 | right])) return parent[i] = leaf, tree;
+	  } // Is the new point is exactly coincident with the existing point?
+
+
+	  xp = +tree._x.call(null, node.data);
+	  yp = +tree._y.call(null, node.data);
+	  if (x === xp && y === yp) return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree; // Otherwise, split the leaf node until the old and new point are separated.
+
+	  do {
+	    parent = parent ? parent[i] = new Array(4) : tree._root = new Array(4);
+	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
+	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
+	  } while ((i = bottom << 1 | right) === (j = (yp >= ym) << 1 | xp >= xm));
+
+	  return parent[j] = node, parent[i] = leaf, tree;
+	}
+
+	function addAll(data) {
+	  var d,
+	      i,
+	      n = data.length,
+	      x,
+	      y,
+	      xz = new Array(n),
+	      yz = new Array(n),
+	      x0 = Infinity,
+	      y0 = Infinity,
+	      x1 = -Infinity,
+	      y1 = -Infinity; // Compute the points and their extent.
+
+	  for (i = 0; i < n; ++i) {
+	    if (isNaN(x = +this._x.call(null, d = data[i])) || isNaN(y = +this._y.call(null, d))) continue;
+	    xz[i] = x;
+	    yz[i] = y;
+	    if (x < x0) x0 = x;
+	    if (x > x1) x1 = x;
+	    if (y < y0) y0 = y;
+	    if (y > y1) y1 = y;
+	  } // If there were no (valid) points, abort.
+
+
+	  if (x0 > x1 || y0 > y1) return this; // Expand the tree to cover the new points.
+
+	  this.cover(x0, y0).cover(x1, y1); // Add the new points.
+
+	  for (i = 0; i < n; ++i) {
+	    add(this, xz[i], yz[i], data[i]);
+	  }
+
+	  return this;
+	}
+
+	function tree_cover (x, y) {
+	  if (isNaN(x = +x) || isNaN(y = +y)) return this; // ignore invalid points
+
+	  var x0 = this._x0,
+	      y0 = this._y0,
+	      x1 = this._x1,
+	      y1 = this._y1; // If the quadtree has no extent, initialize them.
+	  // Integer extent are necessary so that if we later double the extent,
+	  // the existing quadrant boundaries don’t change due to floating point error!
+
+	  if (isNaN(x0)) {
+	    x1 = (x0 = Math.floor(x)) + 1;
+	    y1 = (y0 = Math.floor(y)) + 1;
+	  } // Otherwise, double repeatedly to cover.
+	  else {
+	    var z = x1 - x0 || 1,
+	        node = this._root,
+	        parent,
+	        i;
+
+	    while (x0 > x || x >= x1 || y0 > y || y >= y1) {
+	      i = (y < y0) << 1 | x < x0;
+	      parent = new Array(4), parent[i] = node, node = parent, z *= 2;
+
+	      switch (i) {
+	        case 0:
+	          x1 = x0 + z, y1 = y0 + z;
+	          break;
+
+	        case 1:
+	          x0 = x1 - z, y1 = y0 + z;
+	          break;
+
+	        case 2:
+	          x1 = x0 + z, y0 = y1 - z;
+	          break;
+
+	        case 3:
+	          x0 = x1 - z, y0 = y1 - z;
+	          break;
+	      }
+	    }
+
+	    if (this._root && this._root.length) this._root = node;
+	  }
+
+	  this._x0 = x0;
+	  this._y0 = y0;
+	  this._x1 = x1;
+	  this._y1 = y1;
+	  return this;
+	}
+
+	function tree_data () {
+	  var data = [];
+	  this.visit(function (node) {
+	    if (!node.length) do data.push(node.data); while (node = node.next);
+	  });
+	  return data;
+	}
+
+	function tree_extent (_) {
+	  return arguments.length ? this.cover(+_[0][0], +_[0][1]).cover(+_[1][0], +_[1][1]) : isNaN(this._x0) ? undefined : [[this._x0, this._y0], [this._x1, this._y1]];
+	}
+
+	function Quad (node, x0, y0, x1, y1) {
+	  this.node = node;
+	  this.x0 = x0;
+	  this.y0 = y0;
+	  this.x1 = x1;
+	  this.y1 = y1;
+	}
+
+	function tree_find (x, y, radius) {
+	  var data,
+	      x0 = this._x0,
+	      y0 = this._y0,
+	      x1,
+	      y1,
+	      x2,
+	      y2,
+	      x3 = this._x1,
+	      y3 = this._y1,
+	      quads = [],
+	      node = this._root,
+	      q,
+	      i;
+	  if (node) quads.push(new Quad(node, x0, y0, x3, y3));
+	  if (radius == null) radius = Infinity;else {
+	    x0 = x - radius, y0 = y - radius;
+	    x3 = x + radius, y3 = y + radius;
+	    radius *= radius;
+	  }
+
+	  while (q = quads.pop()) {
+	    // Stop searching if this quadrant can’t contain a closer node.
+	    if (!(node = q.node) || (x1 = q.x0) > x3 || (y1 = q.y0) > y3 || (x2 = q.x1) < x0 || (y2 = q.y1) < y0) continue; // Bisect the current quadrant.
+
+	    if (node.length) {
+	      var xm = (x1 + x2) / 2,
+	          ym = (y1 + y2) / 2;
+	      quads.push(new Quad(node[3], xm, ym, x2, y2), new Quad(node[2], x1, ym, xm, y2), new Quad(node[1], xm, y1, x2, ym), new Quad(node[0], x1, y1, xm, ym)); // Visit the closest quadrant first.
+
+	      if (i = (y >= ym) << 1 | x >= xm) {
+	        q = quads[quads.length - 1];
+	        quads[quads.length - 1] = quads[quads.length - 1 - i];
+	        quads[quads.length - 1 - i] = q;
+	      }
+	    } // Visit this point. (Visiting coincident points isn’t necessary!)
+	    else {
+	      var dx = x - +this._x.call(null, node.data),
+	          dy = y - +this._y.call(null, node.data),
+	          d2 = dx * dx + dy * dy;
+
+	      if (d2 < radius) {
+	        var d = Math.sqrt(radius = d2);
+	        x0 = x - d, y0 = y - d;
+	        x3 = x + d, y3 = y + d;
+	        data = node.data;
+	      }
+	    }
+	  }
+
+	  return data;
+	}
+
+	function tree_remove (d) {
+	  if (isNaN(x = +this._x.call(null, d)) || isNaN(y = +this._y.call(null, d))) return this; // ignore invalid points
+
+	  var parent,
+	      node = this._root,
+	      retainer,
+	      previous,
+	      next,
+	      x0 = this._x0,
+	      y0 = this._y0,
+	      x1 = this._x1,
+	      y1 = this._y1,
+	      x,
+	      y,
+	      xm,
+	      ym,
+	      right,
+	      bottom,
+	      i,
+	      j; // If the tree is empty, initialize the root as a leaf.
+
+	  if (!node) return this; // Find the leaf node for the point.
+	  // While descending, also retain the deepest parent with a non-removed sibling.
+
+	  if (node.length) while (true) {
+	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
+	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
+	    if (!(parent = node, node = node[i = bottom << 1 | right])) return this;
+	    if (!node.length) break;
+	    if (parent[i + 1 & 3] || parent[i + 2 & 3] || parent[i + 3 & 3]) retainer = parent, j = i;
+	  } // Find the point to remove.
+
+	  while (node.data !== d) if (!(previous = node, node = node.next)) return this;
+
+	  if (next = node.next) delete node.next; // If there are multiple coincident points, remove just the point.
+
+	  if (previous) return next ? previous.next = next : delete previous.next, this; // If this is the root point, remove it.
+
+	  if (!parent) return this._root = next, this; // Remove this leaf.
+
+	  next ? parent[i] = next : delete parent[i]; // If the parent now contains exactly one leaf, collapse superfluous parents.
+
+	  if ((node = parent[0] || parent[1] || parent[2] || parent[3]) && node === (parent[3] || parent[2] || parent[1] || parent[0]) && !node.length) {
+	    if (retainer) retainer[j] = node;else this._root = node;
+	  }
+
+	  return this;
+	}
+	function removeAll(data) {
+	  for (var i = 0, n = data.length; i < n; ++i) this.remove(data[i]);
+
+	  return this;
+	}
+
+	function tree_root () {
+	  return this._root;
+	}
+
+	function tree_size () {
+	  var size = 0;
+	  this.visit(function (node) {
+	    if (!node.length) do ++size; while (node = node.next);
+	  });
+	  return size;
+	}
+
+	function tree_visit (callback) {
+	  var quads = [],
+	      q,
+	      node = this._root,
+	      child,
+	      x0,
+	      y0,
+	      x1,
+	      y1;
+	  if (node) quads.push(new Quad(node, this._x0, this._y0, this._x1, this._y1));
+
+	  while (q = quads.pop()) {
+	    if (!callback(node = q.node, x0 = q.x0, y0 = q.y0, x1 = q.x1, y1 = q.y1) && node.length) {
+	      var xm = (x0 + x1) / 2,
+	          ym = (y0 + y1) / 2;
+	      if (child = node[3]) quads.push(new Quad(child, xm, ym, x1, y1));
+	      if (child = node[2]) quads.push(new Quad(child, x0, ym, xm, y1));
+	      if (child = node[1]) quads.push(new Quad(child, xm, y0, x1, ym));
+	      if (child = node[0]) quads.push(new Quad(child, x0, y0, xm, ym));
+	    }
+	  }
+
+	  return this;
+	}
+
+	function tree_visitAfter (callback) {
+	  var quads = [],
+	      next = [],
+	      q;
+	  if (this._root) quads.push(new Quad(this._root, this._x0, this._y0, this._x1, this._y1));
+
+	  while (q = quads.pop()) {
+	    var node = q.node;
+
+	    if (node.length) {
+	      var child,
+	          x0 = q.x0,
+	          y0 = q.y0,
+	          x1 = q.x1,
+	          y1 = q.y1,
+	          xm = (x0 + x1) / 2,
+	          ym = (y0 + y1) / 2;
+	      if (child = node[0]) quads.push(new Quad(child, x0, y0, xm, ym));
+	      if (child = node[1]) quads.push(new Quad(child, xm, y0, x1, ym));
+	      if (child = node[2]) quads.push(new Quad(child, x0, ym, xm, y1));
+	      if (child = node[3]) quads.push(new Quad(child, xm, ym, x1, y1));
+	    }
+
+	    next.push(q);
+	  }
+
+	  while (q = next.pop()) {
+	    callback(q.node, q.x0, q.y0, q.x1, q.y1);
+	  }
+
+	  return this;
+	}
+
+	function defaultX(d) {
+	  return d[0];
+	}
+	function tree_x (_) {
+	  return arguments.length ? (this._x = _, this) : this._x;
+	}
+
+	function defaultY(d) {
+	  return d[1];
+	}
+	function tree_y (_) {
+	  return arguments.length ? (this._y = _, this) : this._y;
+	}
+
+	function quadtree(nodes, x, y) {
+	  var tree = new Quadtree(x == null ? defaultX : x, y == null ? defaultY : y, NaN, NaN, NaN, NaN);
+	  return nodes == null ? tree : tree.addAll(nodes);
+	}
+
+	function Quadtree(x, y, x0, y0, x1, y1) {
+	  this._x = x;
+	  this._y = y;
+	  this._x0 = x0;
+	  this._y0 = y0;
+	  this._x1 = x1;
+	  this._y1 = y1;
+	  this._root = undefined;
+	}
+
+	function leaf_copy(leaf) {
+	  var copy = {
+	    data: leaf.data
+	  },
+	      next = copy;
+
+	  while (leaf = leaf.next) next = next.next = {
+	    data: leaf.data
+	  };
+
+	  return copy;
+	}
+
+	var treeProto = quadtree.prototype = Quadtree.prototype;
+
+	treeProto.copy = function () {
+	  var copy = new Quadtree(this._x, this._y, this._x0, this._y0, this._x1, this._y1),
+	      node = this._root,
+	      nodes,
+	      child;
+	  if (!node) return copy;
+	  if (!node.length) return copy._root = leaf_copy(node), copy;
+	  nodes = [{
+	    source: node,
+	    target: copy._root = new Array(4)
+	  }];
+
+	  while (node = nodes.pop()) {
+	    for (var i = 0; i < 4; ++i) {
+	      if (child = node.source[i]) {
+	        if (child.length) nodes.push({
+	          source: child,
+	          target: node.target[i] = new Array(4)
+	        });else node.target[i] = leaf_copy(child);
+	      }
+	    }
+	  }
+
+	  return copy;
+	};
+
+	treeProto.add = tree_add;
+	treeProto.addAll = addAll;
+	treeProto.cover = tree_cover;
+	treeProto.data = tree_data;
+	treeProto.extent = tree_extent;
+	treeProto.find = tree_find;
+	treeProto.remove = tree_remove;
+	treeProto.removeAll = removeAll;
+	treeProto.root = tree_root;
+	treeProto.size = tree_size;
+	treeProto.visit = tree_visit;
+	treeProto.visitAfter = tree_visitAfter;
+	treeProto.x = tree_x;
+	treeProto.y = tree_y;
+
+	function constant$3 (x) {
+	  return function () {
+	    return x;
+	  };
+	}
+
+	function jiggle (random) {
+	  return (random() - 0.5) * 1e-6;
+	}
+
+	function index$1(d) {
+	  return d.index;
+	}
+
+	function find(nodeById, nodeId) {
+	  var node = nodeById.get(nodeId);
+	  if (!node) throw new Error("node not found: " + nodeId);
+	  return node;
+	}
+
+	function link$1 (links) {
+	  var id = index$1,
+	      strength = defaultStrength,
+	      strengths,
+	      distance = constant$3(30),
+	      distances,
+	      nodes,
+	      count,
+	      bias,
+	      random,
+	      iterations = 1;
+	  if (links == null) links = [];
+
+	  function defaultStrength(link) {
+	    return 1 / Math.min(count[link.source.index], count[link.target.index]);
+	  }
+
+	  function force(alpha) {
+	    for (var k = 0, n = links.length; k < iterations; ++k) {
+	      for (var i = 0, link, source, target, x, y, l, b; i < n; ++i) {
+	        link = links[i], source = link.source, target = link.target;
+	        x = target.x + target.vx - source.x - source.vx || jiggle(random);
+	        y = target.y + target.vy - source.y - source.vy || jiggle(random);
+	        l = Math.sqrt(x * x + y * y);
+	        l = (l - distances[i]) / l * alpha * strengths[i];
+	        x *= l, y *= l;
+	        target.vx -= x * (b = bias[i]);
+	        target.vy -= y * b;
+	        source.vx += x * (b = 1 - b);
+	        source.vy += y * b;
+	      }
+	    }
+	  }
+
+	  function initialize() {
+	    if (!nodes) return;
+	    var i,
+	        n = nodes.length,
+	        m = links.length,
+	        nodeById = new Map(nodes.map((d, i) => [id(d, i, nodes), d])),
+	        link;
+
+	    for (i = 0, count = new Array(n); i < m; ++i) {
+	      link = links[i], link.index = i;
+	      if (typeof link.source !== "object") link.source = find(nodeById, link.source);
+	      if (typeof link.target !== "object") link.target = find(nodeById, link.target);
+	      count[link.source.index] = (count[link.source.index] || 0) + 1;
+	      count[link.target.index] = (count[link.target.index] || 0) + 1;
+	    }
+
+	    for (i = 0, bias = new Array(m); i < m; ++i) {
+	      link = links[i], bias[i] = count[link.source.index] / (count[link.source.index] + count[link.target.index]);
+	    }
+
+	    strengths = new Array(m), initializeStrength();
+	    distances = new Array(m), initializeDistance();
+	  }
+
+	  function initializeStrength() {
+	    if (!nodes) return;
+
+	    for (var i = 0, n = links.length; i < n; ++i) {
+	      strengths[i] = +strength(links[i], i, links);
+	    }
+	  }
+
+	  function initializeDistance() {
+	    if (!nodes) return;
+
+	    for (var i = 0, n = links.length; i < n; ++i) {
+	      distances[i] = +distance(links[i], i, links);
+	    }
+	  }
+
+	  force.initialize = function (_nodes, _random) {
+	    nodes = _nodes;
+	    random = _random;
+	    initialize();
+	  };
+
+	  force.links = function (_) {
+	    return arguments.length ? (links = _, initialize(), force) : links;
+	  };
+
+	  force.id = function (_) {
+	    return arguments.length ? (id = _, force) : id;
+	  };
+
+	  force.iterations = function (_) {
+	    return arguments.length ? (iterations = +_, force) : iterations;
+	  };
+
+	  force.strength = function (_) {
+	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$3(+_), initializeStrength(), force) : strength;
+	  };
+
+	  force.distance = function (_) {
+	    return arguments.length ? (distance = typeof _ === "function" ? _ : constant$3(+_), initializeDistance(), force) : distance;
+	  };
+
+	  return force;
+	}
+
+	var frame = 0,
+	    // is an animation frame pending?
+	timeout$1 = 0,
+	    // is a timeout pending?
+	interval = 0,
+	    // are any timers active?
+	pokeDelay = 1000,
+	    // how frequently we check for clock skew
+	taskHead,
+	    taskTail,
+	    clockLast = 0,
+	    clockNow = 0,
+	    clockSkew = 0,
+	    clock = typeof performance === "object" && performance.now ? performance : Date,
+	    setFrame = typeof window === "object" && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function (f) {
+	  setTimeout(f, 17);
+	};
+	function now() {
+	  return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
+	}
+
+	function clearNow() {
+	  clockNow = 0;
+	}
+
+	function Timer() {
+	  this._call = this._time = this._next = null;
+	}
+	Timer.prototype = timer.prototype = {
+	  constructor: Timer,
+	  restart: function (callback, delay, time) {
+	    if (typeof callback !== "function") throw new TypeError("callback is not a function");
+	    time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
+
+	    if (!this._next && taskTail !== this) {
+	      if (taskTail) taskTail._next = this;else taskHead = this;
+	      taskTail = this;
+	    }
+
+	    this._call = callback;
+	    this._time = time;
+	    sleep();
+	  },
+	  stop: function () {
+	    if (this._call) {
+	      this._call = null;
+	      this._time = Infinity;
+	      sleep();
+	    }
+	  }
+	};
+	function timer(callback, delay, time) {
+	  var t = new Timer();
+	  t.restart(callback, delay, time);
+	  return t;
+	}
+	function timerFlush() {
+	  now(); // Get the current time, if not already set.
+
+	  ++frame; // Pretend we’ve set an alarm, if we haven’t already.
+
+	  var t = taskHead,
+	      e;
+
+	  while (t) {
+	    if ((e = clockNow - t._time) >= 0) t._call.call(undefined, e);
+	    t = t._next;
+	  }
+
+	  --frame;
+	}
+
+	function wake() {
+	  clockNow = (clockLast = clock.now()) + clockSkew;
+	  frame = timeout$1 = 0;
+
+	  try {
+	    timerFlush();
+	  } finally {
+	    frame = 0;
+	    nap();
+	    clockNow = 0;
+	  }
+	}
+
+	function poke() {
+	  var now = clock.now(),
+	      delay = now - clockLast;
+	  if (delay > pokeDelay) clockSkew -= delay, clockLast = now;
+	}
+
+	function nap() {
+	  var t0,
+	      t1 = taskHead,
+	      t2,
+	      time = Infinity;
+
+	  while (t1) {
+	    if (t1._call) {
+	      if (time > t1._time) time = t1._time;
+	      t0 = t1, t1 = t1._next;
+	    } else {
+	      t2 = t1._next, t1._next = null;
+	      t1 = t0 ? t0._next = t2 : taskHead = t2;
+	    }
+	  }
+
+	  taskTail = t0;
+	  sleep(time);
+	}
+
+	function sleep(time) {
+	  if (frame) return; // Soonest alarm already set, or will be.
+
+	  if (timeout$1) timeout$1 = clearTimeout(timeout$1);
+	  var delay = time - clockNow; // Strictly less than if we recomputed clockNow.
+
+	  if (delay > 24) {
+	    if (time < Infinity) timeout$1 = setTimeout(wake, time - clock.now() - clockSkew);
+	    if (interval) interval = clearInterval(interval);
+	  } else {
+	    if (!interval) clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
+	    frame = 1, setFrame(wake);
+	  }
+	}
+
+	function timeout (callback, delay, time) {
+	  var t = new Timer();
+	  delay = delay == null ? 0 : +delay;
+	  t.restart(elapsed => {
+	    t.stop();
+	    callback(elapsed + delay);
+	  }, delay, time);
+	  return t;
+	}
+
+	// https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
+	const a = 1664525;
+	const c$1 = 1013904223;
+	const m = 4294967296; // 2^32
+
+	function lcg () {
+	  let s = 1;
+	  return () => (s = (a * s + c$1) % m) / m;
+	}
+
+	function x$2(d) {
+	  return d.x;
+	}
+	function y$2(d) {
+	  return d.y;
+	}
+	var initialRadius = 10,
+	    initialAngle = Math.PI * (3 - Math.sqrt(5));
+	function simulation (nodes) {
+	  var simulation,
+	      alpha = 1,
+	      alphaMin = 0.001,
+	      alphaDecay = 1 - Math.pow(alphaMin, 1 / 300),
+	      alphaTarget = 0,
+	      velocityDecay = 0.6,
+	      forces = new Map(),
+	      stepper = timer(step),
+	      event = dispatch("tick", "end"),
+	      random = lcg();
+	  if (nodes == null) nodes = [];
+
+	  function step() {
+	    tick();
+	    event.call("tick", simulation);
+
+	    if (alpha < alphaMin) {
+	      stepper.stop();
+	      event.call("end", simulation);
+	    }
+	  }
+
+	  function tick(iterations) {
+	    var i,
+	        n = nodes.length,
+	        node;
+	    if (iterations === undefined) iterations = 1;
+
+	    for (var k = 0; k < iterations; ++k) {
+	      alpha += (alphaTarget - alpha) * alphaDecay;
+	      forces.forEach(function (force) {
+	        force(alpha);
+	      });
+
+	      for (i = 0; i < n; ++i) {
+	        node = nodes[i];
+	        if (node.fx == null) node.x += node.vx *= velocityDecay;else node.x = node.fx, node.vx = 0;
+	        if (node.fy == null) node.y += node.vy *= velocityDecay;else node.y = node.fy, node.vy = 0;
+	      }
+	    }
+
+	    return simulation;
+	  }
+
+	  function initializeNodes() {
+	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
+	      node = nodes[i], node.index = i;
+	      if (node.fx != null) node.x = node.fx;
+	      if (node.fy != null) node.y = node.fy;
+
+	      if (isNaN(node.x) || isNaN(node.y)) {
+	        var radius = initialRadius * Math.sqrt(0.5 + i),
+	            angle = i * initialAngle;
+	        node.x = radius * Math.cos(angle);
+	        node.y = radius * Math.sin(angle);
+	      }
+
+	      if (isNaN(node.vx) || isNaN(node.vy)) {
+	        node.vx = node.vy = 0;
+	      }
+	    }
+	  }
+
+	  function initializeForce(force) {
+	    if (force.initialize) force.initialize(nodes, random);
+	    return force;
+	  }
+
+	  initializeNodes();
+	  return simulation = {
+	    tick: tick,
+	    restart: function () {
+	      return stepper.restart(step), simulation;
+	    },
+	    stop: function () {
+	      return stepper.stop(), simulation;
+	    },
+	    nodes: function (_) {
+	      return arguments.length ? (nodes = _, initializeNodes(), forces.forEach(initializeForce), simulation) : nodes;
+	    },
+	    alpha: function (_) {
+	      return arguments.length ? (alpha = +_, simulation) : alpha;
+	    },
+	    alphaMin: function (_) {
+	      return arguments.length ? (alphaMin = +_, simulation) : alphaMin;
+	    },
+	    alphaDecay: function (_) {
+	      return arguments.length ? (alphaDecay = +_, simulation) : +alphaDecay;
+	    },
+	    alphaTarget: function (_) {
+	      return arguments.length ? (alphaTarget = +_, simulation) : alphaTarget;
+	    },
+	    velocityDecay: function (_) {
+	      return arguments.length ? (velocityDecay = 1 - _, simulation) : 1 - velocityDecay;
+	    },
+	    randomSource: function (_) {
+	      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation) : random;
+	    },
+	    force: function (name, _) {
+	      return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
+	    },
+	    find: function (x, y, radius) {
+	      var i = 0,
+	          n = nodes.length,
+	          dx,
+	          dy,
+	          d2,
+	          node,
+	          closest;
+	      if (radius == null) radius = Infinity;else radius *= radius;
+
+	      for (i = 0; i < n; ++i) {
+	        node = nodes[i];
+	        dx = x - node.x;
+	        dy = y - node.y;
+	        d2 = dx * dx + dy * dy;
+	        if (d2 < radius) closest = node, radius = d2;
+	      }
+
+	      return closest;
+	    },
+	    on: function (name, _) {
+	      return arguments.length > 1 ? (event.on(name, _), simulation) : event.on(name);
+	    }
+	  };
+	}
+
+	function manyBody () {
+	  var nodes,
+	      node,
+	      random,
+	      alpha,
+	      strength = constant$3(-30),
+	      strengths,
+	      distanceMin2 = 1,
+	      distanceMax2 = Infinity,
+	      theta2 = 0.81;
+
+	  function force(_) {
+	    var i,
+	        n = nodes.length,
+	        tree = quadtree(nodes, x$2, y$2).visitAfter(accumulate);
+
+	    for (alpha = _, i = 0; i < n; ++i) node = nodes[i], tree.visit(apply);
+	  }
+
+	  function initialize() {
+	    if (!nodes) return;
+	    var i,
+	        n = nodes.length,
+	        node;
+	    strengths = new Array(n);
+
+	    for (i = 0; i < n; ++i) node = nodes[i], strengths[node.index] = +strength(node, i, nodes);
+	  }
+
+	  function accumulate(quad) {
+	    var strength = 0,
+	        q,
+	        c,
+	        weight = 0,
+	        x,
+	        y,
+	        i; // For internal nodes, accumulate forces from child quadrants.
+
+	    if (quad.length) {
+	      for (x = y = i = 0; i < 4; ++i) {
+	        if ((q = quad[i]) && (c = Math.abs(q.value))) {
+	          strength += q.value, weight += c, x += c * q.x, y += c * q.y;
+	        }
+	      }
+
+	      quad.x = x / weight;
+	      quad.y = y / weight;
+	    } // For leaf nodes, accumulate forces from coincident quadrants.
+	    else {
+	      q = quad;
+	      q.x = q.data.x;
+	      q.y = q.data.y;
+
+	      do strength += strengths[q.data.index]; while (q = q.next);
+	    }
+
+	    quad.value = strength;
+	  }
+
+	  function apply(quad, x1, _, x2) {
+	    if (!quad.value) return true;
+	    var x = quad.x - node.x,
+	        y = quad.y - node.y,
+	        w = x2 - x1,
+	        l = x * x + y * y; // Apply the Barnes-Hut approximation if possible.
+	    // Limit forces for very close nodes; randomize direction if coincident.
+
+	    if (w * w / theta2 < l) {
+	      if (l < distanceMax2) {
+	        if (x === 0) x = jiggle(random), l += x * x;
+	        if (y === 0) y = jiggle(random), l += y * y;
+	        if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+	        node.vx += x * quad.value * alpha / l;
+	        node.vy += y * quad.value * alpha / l;
+	      }
+
+	      return true;
+	    } // Otherwise, process points directly.
+	    else if (quad.length || l >= distanceMax2) return; // Limit forces for very close nodes; randomize direction if coincident.
+
+
+	    if (quad.data !== node || quad.next) {
+	      if (x === 0) x = jiggle(random), l += x * x;
+	      if (y === 0) y = jiggle(random), l += y * y;
+	      if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+	    }
+
+	    do if (quad.data !== node) {
+	      w = strengths[quad.data.index] * alpha / l;
+	      node.vx += x * w;
+	      node.vy += y * w;
+	    } while (quad = quad.next);
+	  }
+
+	  force.initialize = function (_nodes, _random) {
+	    nodes = _nodes;
+	    random = _random;
+	    initialize();
+	  };
+
+	  force.strength = function (_) {
+	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$3(+_), initialize(), force) : strength;
+	  };
+
+	  force.distanceMin = function (_) {
+	    return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
+	  };
+
+	  force.distanceMax = function (_) {
+	    return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
+	  };
+
+	  force.theta = function (_) {
+	    return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
+	  };
+
+	  return force;
+	}
+
+	function x$1 (x) {
+	  var strength = constant$3(0.1),
+	      nodes,
+	      strengths,
+	      xz;
+	  if (typeof x !== "function") x = constant$3(x == null ? 0 : +x);
+
+	  function force(alpha) {
+	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
+	      node = nodes[i], node.vx += (xz[i] - node.x) * strengths[i] * alpha;
+	    }
+	  }
+
+	  function initialize() {
+	    if (!nodes) return;
+	    var i,
+	        n = nodes.length;
+	    strengths = new Array(n);
+	    xz = new Array(n);
+
+	    for (i = 0; i < n; ++i) {
+	      strengths[i] = isNaN(xz[i] = +x(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
+	    }
+	  }
+
+	  force.initialize = function (_) {
+	    nodes = _;
+	    initialize();
+	  };
+
+	  force.strength = function (_) {
+	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$3(+_), initialize(), force) : strength;
+	  };
+
+	  force.x = function (_) {
+	    return arguments.length ? (x = typeof _ === "function" ? _ : constant$3(+_), initialize(), force) : x;
+	  };
+
+	  return force;
+	}
+
+	function y$1 (y) {
+	  var strength = constant$3(0.1),
+	      nodes,
+	      strengths,
+	      yz;
+	  if (typeof y !== "function") y = constant$3(y == null ? 0 : +y);
+
+	  function force(alpha) {
+	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
+	      node = nodes[i], node.vy += (yz[i] - node.y) * strengths[i] * alpha;
+	    }
+	  }
+
+	  function initialize() {
+	    if (!nodes) return;
+	    var i,
+	        n = nodes.length;
+	    strengths = new Array(n);
+	    yz = new Array(n);
+
+	    for (i = 0; i < n; ++i) {
+	      strengths[i] = isNaN(yz[i] = +y(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
+	    }
+	  }
+
+	  force.initialize = function (_) {
+	    nodes = _;
+	    initialize();
+	  };
+
+	  force.strength = function (_) {
+	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$3(+_), initialize(), force) : strength;
+	  };
+
+	  force.y = function (_) {
+	    return arguments.length ? (y = typeof _ === "function" ? _ : constant$3(+_), initialize(), force) : y;
+	  };
+
+	  return force;
+	}
+
+	function count(node) {
+	  var sum = 0,
+	      children = node.children,
+	      i = children && children.length;
+	  if (!i) sum = 1;else while (--i >= 0) sum += children[i].value;
+	  node.value = sum;
+	}
+
+	function node_count () {
+	  return this.eachAfter(count);
+	}
+
+	function node_each (callback, that) {
+	  let index = -1;
+
+	  for (const node of this) {
+	    callback.call(that, node, ++index, this);
+	  }
+
+	  return this;
+	}
+
+	function node_eachBefore (callback, that) {
+	  var node = this,
+	      nodes = [node],
+	      children,
+	      i,
+	      index = -1;
+
+	  while (node = nodes.pop()) {
+	    callback.call(that, node, ++index, this);
+
+	    if (children = node.children) {
+	      for (i = children.length - 1; i >= 0; --i) {
+	        nodes.push(children[i]);
+	      }
+	    }
+	  }
+
+	  return this;
+	}
+
+	function node_eachAfter (callback, that) {
+	  var node = this,
+	      nodes = [node],
+	      next = [],
+	      children,
+	      i,
+	      n,
+	      index = -1;
+
+	  while (node = nodes.pop()) {
+	    next.push(node);
+
+	    if (children = node.children) {
+	      for (i = 0, n = children.length; i < n; ++i) {
+	        nodes.push(children[i]);
+	      }
+	    }
+	  }
+
+	  while (node = next.pop()) {
+	    callback.call(that, node, ++index, this);
+	  }
+
+	  return this;
+	}
+
+	function node_find (callback, that) {
+	  let index = -1;
+
+	  for (const node of this) {
+	    if (callback.call(that, node, ++index, this)) {
+	      return node;
+	    }
+	  }
+	}
+
+	function node_sum (value) {
+	  return this.eachAfter(function (node) {
+	    var sum = +value(node.data) || 0,
+	        children = node.children,
+	        i = children && children.length;
+
+	    while (--i >= 0) sum += children[i].value;
+
+	    node.value = sum;
+	  });
+	}
+
+	function node_sort (compare) {
+	  return this.eachBefore(function (node) {
+	    if (node.children) {
+	      node.children.sort(compare);
+	    }
+	  });
+	}
+
+	function node_path (end) {
+	  var start = this,
+	      ancestor = leastCommonAncestor(start, end),
+	      nodes = [start];
+
+	  while (start !== ancestor) {
+	    start = start.parent;
+	    nodes.push(start);
+	  }
+
+	  var k = nodes.length;
+
+	  while (end !== ancestor) {
+	    nodes.splice(k, 0, end);
+	    end = end.parent;
+	  }
+
+	  return nodes;
+	}
+
+	function leastCommonAncestor(a, b) {
+	  if (a === b) return a;
+	  var aNodes = a.ancestors(),
+	      bNodes = b.ancestors(),
+	      c = null;
+	  a = aNodes.pop();
+	  b = bNodes.pop();
+
+	  while (a === b) {
+	    c = a;
+	    a = aNodes.pop();
+	    b = bNodes.pop();
+	  }
+
+	  return c;
+	}
+
+	function node_ancestors () {
+	  var node = this,
+	      nodes = [node];
+
+	  while (node = node.parent) {
+	    nodes.push(node);
+	  }
+
+	  return nodes;
+	}
+
+	function node_descendants () {
+	  return Array.from(this);
+	}
+
+	function node_leaves () {
+	  var leaves = [];
+	  this.eachBefore(function (node) {
+	    if (!node.children) {
+	      leaves.push(node);
+	    }
+	  });
+	  return leaves;
+	}
+
+	function node_links () {
+	  var root = this,
+	      links = [];
+	  root.each(function (node) {
+	    if (node !== root) {
+	      // Don’t include the root’s parent, if any.
+	      links.push({
+	        source: node.parent,
+	        target: node
+	      });
+	    }
+	  });
+	  return links;
+	}
+
+	function* node_iterator () {
+	  var node = this,
+	      current,
+	      next = [node],
+	      children,
+	      i,
+	      n;
+
+	  do {
+	    current = next.reverse(), next = [];
+
+	    while (node = current.pop()) {
+	      yield node;
+
+	      if (children = node.children) {
+	        for (i = 0, n = children.length; i < n; ++i) {
+	          next.push(children[i]);
+	        }
+	      }
+	    }
+	  } while (next.length);
+	}
+
+	function hierarchy(data, children) {
+	  if (data instanceof Map) {
+	    data = [undefined, data];
+	    if (children === undefined) children = mapChildren;
+	  } else if (children === undefined) {
+	    children = objectChildren;
+	  }
+
+	  var root = new Node$1(data),
+	      node,
+	      nodes = [root],
+	      child,
+	      childs,
+	      i,
+	      n;
+
+	  while (node = nodes.pop()) {
+	    if ((childs = children(node.data)) && (n = (childs = Array.from(childs)).length)) {
+	      node.children = childs;
+
+	      for (i = n - 1; i >= 0; --i) {
+	        nodes.push(child = childs[i] = new Node$1(childs[i]));
+	        child.parent = node;
+	        child.depth = node.depth + 1;
+	      }
+	    }
+	  }
+
+	  return root.eachBefore(computeHeight);
+	}
+
+	function node_copy() {
+	  return hierarchy(this).eachBefore(copyData);
+	}
+
+	function objectChildren(d) {
+	  return d.children;
+	}
+
+	function mapChildren(d) {
+	  return Array.isArray(d) ? d[1] : null;
+	}
+
+	function copyData(node) {
+	  if (node.data.value !== undefined) node.value = node.data.value;
+	  node.data = node.data.data;
+	}
+
+	function computeHeight(node) {
+	  var height = 0;
+
+	  do node.height = height; while ((node = node.parent) && node.height < ++height);
+	}
+	function Node$1(data) {
+	  this.data = data;
+	  this.depth = this.height = 0;
+	  this.parent = null;
+	}
+	Node$1.prototype = hierarchy.prototype = {
+	  constructor: Node$1,
+	  count: node_count,
+	  each: node_each,
+	  eachAfter: node_eachAfter,
+	  eachBefore: node_eachBefore,
+	  find: node_find,
+	  sum: node_sum,
+	  sort: node_sort,
+	  path: node_path,
+	  ancestors: node_ancestors,
+	  descendants: node_descendants,
+	  leaves: node_leaves,
+	  links: node_links,
+	  copy: node_copy,
+	  [Symbol.iterator]: node_iterator
+	};
+
+	function array (x) {
+	  return typeof x === "object" && "length" in x ? x // Array, TypedArray, NodeList, array-like
+	  : Array.from(x); // Map, Set, iterable, string, or anything else
+	}
+	function shuffle(array) {
+	  var m = array.length,
+	      t,
+	      i;
+
+	  while (m) {
+	    i = Math.random() * m-- | 0;
+	    t = array[m];
+	    array[m] = array[i];
+	    array[i] = t;
+	  }
+
+	  return array;
+	}
+
+	function enclose (circles) {
+	  var i = 0,
+	      n = (circles = shuffle(Array.from(circles))).length,
+	      B = [],
+	      p,
+	      e;
+
+	  while (i < n) {
+	    p = circles[i];
+	    if (e && enclosesWeak(e, p)) ++i;else e = encloseBasis(B = extendBasis(B, p)), i = 0;
+	  }
+
+	  return e;
+	}
+
+	function extendBasis(B, p) {
+	  var i, j;
+	  if (enclosesWeakAll(p, B)) return [p]; // If we get here then B must have at least one element.
+
+	  for (i = 0; i < B.length; ++i) {
+	    if (enclosesNot(p, B[i]) && enclosesWeakAll(encloseBasis2(B[i], p), B)) {
+	      return [B[i], p];
+	    }
+	  } // If we get here then B must have at least two elements.
+
+
+	  for (i = 0; i < B.length - 1; ++i) {
+	    for (j = i + 1; j < B.length; ++j) {
+	      if (enclosesNot(encloseBasis2(B[i], B[j]), p) && enclosesNot(encloseBasis2(B[i], p), B[j]) && enclosesNot(encloseBasis2(B[j], p), B[i]) && enclosesWeakAll(encloseBasis3(B[i], B[j], p), B)) {
+	        return [B[i], B[j], p];
+	      }
+	    }
+	  } // If we get here then something is very wrong.
+
+
+	  throw new Error();
+	}
+
+	function enclosesNot(a, b) {
+	  var dr = a.r - b.r,
+	      dx = b.x - a.x,
+	      dy = b.y - a.y;
+	  return dr < 0 || dr * dr < dx * dx + dy * dy;
+	}
+
+	function enclosesWeak(a, b) {
+	  var dr = a.r - b.r + Math.max(a.r, b.r, 1) * 1e-9,
+	      dx = b.x - a.x,
+	      dy = b.y - a.y;
+	  return dr > 0 && dr * dr > dx * dx + dy * dy;
+	}
+
+	function enclosesWeakAll(a, B) {
+	  for (var i = 0; i < B.length; ++i) {
+	    if (!enclosesWeak(a, B[i])) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	function encloseBasis(B) {
+	  switch (B.length) {
+	    case 1:
+	      return encloseBasis1(B[0]);
+
+	    case 2:
+	      return encloseBasis2(B[0], B[1]);
+
+	    case 3:
+	      return encloseBasis3(B[0], B[1], B[2]);
+	  }
+	}
+
+	function encloseBasis1(a) {
+	  return {
+	    x: a.x,
+	    y: a.y,
+	    r: a.r
+	  };
+	}
+
+	function encloseBasis2(a, b) {
+	  var x1 = a.x,
+	      y1 = a.y,
+	      r1 = a.r,
+	      x2 = b.x,
+	      y2 = b.y,
+	      r2 = b.r,
+	      x21 = x2 - x1,
+	      y21 = y2 - y1,
+	      r21 = r2 - r1,
+	      l = Math.sqrt(x21 * x21 + y21 * y21);
+	  return {
+	    x: (x1 + x2 + x21 / l * r21) / 2,
+	    y: (y1 + y2 + y21 / l * r21) / 2,
+	    r: (l + r1 + r2) / 2
+	  };
+	}
+
+	function encloseBasis3(a, b, c) {
+	  var x1 = a.x,
+	      y1 = a.y,
+	      r1 = a.r,
+	      x2 = b.x,
+	      y2 = b.y,
+	      r2 = b.r,
+	      x3 = c.x,
+	      y3 = c.y,
+	      r3 = c.r,
+	      a2 = x1 - x2,
+	      a3 = x1 - x3,
+	      b2 = y1 - y2,
+	      b3 = y1 - y3,
+	      c2 = r2 - r1,
+	      c3 = r3 - r1,
+	      d1 = x1 * x1 + y1 * y1 - r1 * r1,
+	      d2 = d1 - x2 * x2 - y2 * y2 + r2 * r2,
+	      d3 = d1 - x3 * x3 - y3 * y3 + r3 * r3,
+	      ab = a3 * b2 - a2 * b3,
+	      xa = (b2 * d3 - b3 * d2) / (ab * 2) - x1,
+	      xb = (b3 * c2 - b2 * c3) / ab,
+	      ya = (a3 * d2 - a2 * d3) / (ab * 2) - y1,
+	      yb = (a2 * c3 - a3 * c2) / ab,
+	      A = xb * xb + yb * yb - 1,
+	      B = 2 * (r1 + xa * xb + ya * yb),
+	      C = xa * xa + ya * ya - r1 * r1,
+	      r = -(A ? (B + Math.sqrt(B * B - 4 * A * C)) / (2 * A) : C / B);
+	  return {
+	    x: x1 + xa + xb * r,
+	    y: y1 + ya + yb * r,
+	    r: r
+	  };
+	}
+
+	function place(b, a, c) {
+	  var dx = b.x - a.x,
+	      x,
+	      a2,
+	      dy = b.y - a.y,
+	      y,
+	      b2,
+	      d2 = dx * dx + dy * dy;
+
+	  if (d2) {
+	    a2 = a.r + c.r, a2 *= a2;
+	    b2 = b.r + c.r, b2 *= b2;
+
+	    if (a2 > b2) {
+	      x = (d2 + b2 - a2) / (2 * d2);
+	      y = Math.sqrt(Math.max(0, b2 / d2 - x * x));
+	      c.x = b.x - x * dx - y * dy;
+	      c.y = b.y - x * dy + y * dx;
+	    } else {
+	      x = (d2 + a2 - b2) / (2 * d2);
+	      y = Math.sqrt(Math.max(0, a2 / d2 - x * x));
+	      c.x = a.x + x * dx - y * dy;
+	      c.y = a.y + x * dy + y * dx;
+	    }
+	  } else {
+	    c.x = a.x + c.r;
+	    c.y = a.y;
+	  }
+	}
+
+	function intersects(a, b) {
+	  var dr = a.r + b.r - 1e-6,
+	      dx = b.x - a.x,
+	      dy = b.y - a.y;
+	  return dr > 0 && dr * dr > dx * dx + dy * dy;
+	}
+
+	function score(node) {
+	  var a = node._,
+	      b = node.next._,
+	      ab = a.r + b.r,
+	      dx = (a.x * b.r + b.x * a.r) / ab,
+	      dy = (a.y * b.r + b.y * a.r) / ab;
+	  return dx * dx + dy * dy;
+	}
+
+	function Node(circle) {
+	  this._ = circle;
+	  this.next = null;
+	  this.previous = null;
+	}
+
+	function packEnclose(circles) {
+	  if (!(n = (circles = array(circles)).length)) return 0;
+	  var a, b, c, n, aa, ca, i, j, k, sj, sk; // Place the first circle.
+
+	  a = circles[0], a.x = 0, a.y = 0;
+	  if (!(n > 1)) return a.r; // Place the second circle.
+
+	  b = circles[1], a.x = -b.r, b.x = a.r, b.y = 0;
+	  if (!(n > 2)) return a.r + b.r; // Place the third circle.
+
+	  place(b, a, c = circles[2]); // Initialize the front-chain using the first three circles a, b and c.
+
+	  a = new Node(a), b = new Node(b), c = new Node(c);
+	  a.next = c.previous = b;
+	  b.next = a.previous = c;
+	  c.next = b.previous = a; // Attempt to place each remaining circle…
+
+	  pack: for (i = 3; i < n; ++i) {
+	    place(a._, b._, c = circles[i]), c = new Node(c); // Find the closest intersecting circle on the front-chain, if any.
+	    // “Closeness” is determined by linear distance along the front-chain.
+	    // “Ahead” or “behind” is likewise determined by linear distance.
+
+	    j = b.next, k = a.previous, sj = b._.r, sk = a._.r;
+
+	    do {
+	      if (sj <= sk) {
+	        if (intersects(j._, c._)) {
+	          b = j, a.next = b, b.previous = a, --i;
+	          continue pack;
+	        }
+
+	        sj += j._.r, j = j.next;
+	      } else {
+	        if (intersects(k._, c._)) {
+	          a = k, a.next = b, b.previous = a, --i;
+	          continue pack;
+	        }
+
+	        sk += k._.r, k = k.previous;
+	      }
+	    } while (j !== k.next); // Success! Insert the new circle c between a and b.
+
+
+	    c.previous = a, c.next = b, a.next = b.previous = b = c; // Compute the new closest circle pair to the centroid.
+
+	    aa = score(a);
+
+	    while ((c = c.next) !== b) {
+	      if ((ca = score(c)) < aa) {
+	        a = c, aa = ca;
+	      }
+	    }
+
+	    b = a.next;
+	  } // Compute the enclosing circle of the front chain.
+
+
+	  a = [b._], c = b;
+
+	  while ((c = c.next) !== b) a.push(c._);
+
+	  c = enclose(a); // Translate the circles to put the enclosing circle around the origin.
+
+	  for (i = 0; i < n; ++i) a = circles[i], a.x -= c.x, a.y -= c.y;
+
+	  return c.r;
+	}
+
+	function optional(f) {
+	  return f == null ? null : required(f);
+	}
+	function required(f) {
+	  if (typeof f !== "function") throw new Error();
+	  return f;
+	}
+
+	function constantZero() {
+	  return 0;
+	}
+	function constant$2 (x) {
+	  return function () {
+	    return x;
+	  };
+	}
+
+	function defaultRadius(d) {
+	  return Math.sqrt(d.value);
+	}
+
+	function index () {
+	  var radius = null,
+	      dx = 1,
+	      dy = 1,
+	      padding = constantZero;
+
+	  function pack(root) {
+	    root.x = dx / 2, root.y = dy / 2;
+
+	    if (radius) {
+	      root.eachBefore(radiusLeaf(radius)).eachAfter(packChildren(padding, 0.5)).eachBefore(translateChild(1));
+	    } else {
+	      root.eachBefore(radiusLeaf(defaultRadius)).eachAfter(packChildren(constantZero, 1)).eachAfter(packChildren(padding, root.r / Math.min(dx, dy))).eachBefore(translateChild(Math.min(dx, dy) / (2 * root.r)));
+	    }
+
+	    return root;
+	  }
+
+	  pack.radius = function (x) {
+	    return arguments.length ? (radius = optional(x), pack) : radius;
+	  };
+
+	  pack.size = function (x) {
+	    return arguments.length ? (dx = +x[0], dy = +x[1], pack) : [dx, dy];
+	  };
+
+	  pack.padding = function (x) {
+	    return arguments.length ? (padding = typeof x === "function" ? x : constant$2(+x), pack) : padding;
+	  };
+
+	  return pack;
+	}
+
+	function radiusLeaf(radius) {
+	  return function (node) {
+	    if (!node.children) {
+	      node.r = Math.max(0, +radius(node) || 0);
+	    }
+	  };
+	}
+
+	function packChildren(padding, k) {
+	  return function (node) {
+	    if (children = node.children) {
+	      var children,
+	          i,
+	          n = children.length,
+	          r = padding(node) * k || 0,
+	          e;
+	      if (r) for (i = 0; i < n; ++i) children[i].r += r;
+	      e = packEnclose(children);
+	      if (r) for (i = 0; i < n; ++i) children[i].r -= r;
+	      node.r = e + r;
+	    }
+	  };
+	}
+
+	function translateChild(k) {
+	  return function (node) {
+	    var parent = node.parent;
+	    node.r *= k;
+
+	    if (parent) {
+	      node.x = parent.x + k * node.x;
+	      node.y = parent.y + k * node.y;
+	    }
+	  };
+	}
+
+	function roundNode (node) {
+	  node.x0 = Math.round(node.x0);
+	  node.y0 = Math.round(node.y0);
+	  node.x1 = Math.round(node.x1);
+	  node.y1 = Math.round(node.y1);
+	}
+
+	function treemapDice (parent, x0, y0, x1, y1) {
+	  var nodes = parent.children,
+	      node,
+	      i = -1,
+	      n = nodes.length,
+	      k = parent.value && (x1 - x0) / parent.value;
+
+	  while (++i < n) {
+	    node = nodes[i], node.y0 = y0, node.y1 = y1;
+	    node.x0 = x0, node.x1 = x0 += node.value * k;
+	  }
+	}
+
+	function partition () {
+	  var dx = 1,
+	      dy = 1,
+	      padding = 0,
+	      round = false;
+
+	  function partition(root) {
+	    var n = root.height + 1;
+	    root.x0 = root.y0 = padding;
+	    root.x1 = dx;
+	    root.y1 = dy / n;
+	    root.eachBefore(positionNode(dy, n));
+	    if (round) root.eachBefore(roundNode);
+	    return root;
+	  }
+
+	  function positionNode(dy, n) {
+	    return function (node) {
+	      if (node.children) {
+	        treemapDice(node, node.x0, dy * (node.depth + 1) / n, node.x1, dy * (node.depth + 2) / n);
+	      }
+
+	      var x0 = node.x0,
+	          y0 = node.y0,
+	          x1 = node.x1 - padding,
+	          y1 = node.y1 - padding;
+	      if (x1 < x0) x0 = x1 = (x0 + x1) / 2;
+	      if (y1 < y0) y0 = y1 = (y0 + y1) / 2;
+	      node.x0 = x0;
+	      node.y0 = y0;
+	      node.x1 = x1;
+	      node.y1 = y1;
+	    };
+	  }
+
+	  partition.round = function (x) {
+	    return arguments.length ? (round = !!x, partition) : round;
+	  };
+
+	  partition.size = function (x) {
+	    return arguments.length ? (dx = +x[0], dy = +x[1], partition) : [dx, dy];
+	  };
+
+	  partition.padding = function (x) {
+	    return arguments.length ? (padding = +x, partition) : padding;
+	  };
+
+	  return partition;
+	}
+
+	var preroot = {
+	  depth: -1
+	},
+	    ambiguous = {};
+
+	function defaultId(d) {
+	  return d.id;
+	}
+
+	function defaultParentId(d) {
+	  return d.parentId;
+	}
+
+	function stratify () {
+	  var id = defaultId,
+	      parentId = defaultParentId;
+
+	  function stratify(data) {
+	    var nodes = Array.from(data),
+	        n = nodes.length,
+	        d,
+	        i,
+	        root,
+	        parent,
+	        node,
+	        nodeId,
+	        nodeKey,
+	        nodeByKey = new Map();
+
+	    for (i = 0; i < n; ++i) {
+	      d = nodes[i], node = nodes[i] = new Node$1(d);
+
+	      if ((nodeId = id(d, i, data)) != null && (nodeId += "")) {
+	        nodeKey = node.id = nodeId;
+	        nodeByKey.set(nodeKey, nodeByKey.has(nodeKey) ? ambiguous : node);
+	      }
+
+	      if ((nodeId = parentId(d, i, data)) != null && (nodeId += "")) {
+	        node.parent = nodeId;
+	      }
+	    }
+
+	    for (i = 0; i < n; ++i) {
+	      node = nodes[i];
+
+	      if (nodeId = node.parent) {
+	        parent = nodeByKey.get(nodeId);
+	        if (!parent) throw new Error("missing: " + nodeId);
+	        if (parent === ambiguous) throw new Error("ambiguous: " + nodeId);
+	        if (parent.children) parent.children.push(node);else parent.children = [node];
+	        node.parent = parent;
+	      } else {
+	        if (root) throw new Error("multiple roots");
+	        root = node;
+	      }
+	    }
+
+	    if (!root) throw new Error("no root");
+	    root.parent = preroot;
+	    root.eachBefore(function (node) {
+	      node.depth = node.parent.depth + 1;
+	      --n;
+	    }).eachBefore(computeHeight);
+	    root.parent = null;
+	    if (n > 0) throw new Error("cycle");
+	    return root;
+	  }
+
+	  stratify.id = function (x) {
+	    return arguments.length ? (id = required(x), stratify) : id;
+	  };
+
+	  stratify.parentId = function (x) {
+	    return arguments.length ? (parentId = required(x), stratify) : parentId;
+	  };
+
+	  return stratify;
+	}
+
+	function defaultSeparation(a, b) {
+	  return a.parent === b.parent ? 1 : 2;
+	} // function radialSeparation(a, b) {
+	//   return (a.parent === b.parent ? 1 : 2) / a.depth;
+	// }
+	// This function is used to traverse the left contour of a subtree (or
+	// subforest). It returns the successor of v on this contour. This successor is
+	// either given by the leftmost child of v or by the thread of v. The function
+	// returns null if and only if v is on the highest level of its subtree.
+
+
+	function nextLeft(v) {
+	  var children = v.children;
+	  return children ? children[0] : v.t;
+	} // This function works analogously to nextLeft.
+
+
+	function nextRight(v) {
+	  var children = v.children;
+	  return children ? children[children.length - 1] : v.t;
+	} // Shifts the current subtree rooted at w+. This is done by increasing
+	// prelim(w+) and mod(w+) by shift.
+
+
+	function moveSubtree(wm, wp, shift) {
+	  var change = shift / (wp.i - wm.i);
+	  wp.c -= change;
+	  wp.s += shift;
+	  wm.c += change;
+	  wp.z += shift;
+	  wp.m += shift;
+	} // All other shifts, applied to the smaller subtrees between w- and w+, are
+	// performed by this function. To prepare the shifts, we have to adjust
+	// change(w+), shift(w+), and change(w-).
+
+
+	function executeShifts(v) {
+	  var shift = 0,
+	      change = 0,
+	      children = v.children,
+	      i = children.length,
+	      w;
+
+	  while (--i >= 0) {
+	    w = children[i];
+	    w.z += shift;
+	    w.m += shift;
+	    shift += w.s + (change += w.c);
+	  }
+	} // If vi-’s ancestor is a sibling of v, returns vi-’s ancestor. Otherwise,
+	// returns the specified (default) ancestor.
+
+
+	function nextAncestor(vim, v, ancestor) {
+	  return vim.a.parent === v.parent ? vim.a : ancestor;
+	}
+
+	function TreeNode(node, i) {
+	  this._ = node;
+	  this.parent = null;
+	  this.children = null;
+	  this.A = null; // default ancestor
+
+	  this.a = this; // ancestor
+
+	  this.z = 0; // prelim
+
+	  this.m = 0; // mod
+
+	  this.c = 0; // change
+
+	  this.s = 0; // shift
+
+	  this.t = null; // thread
+
+	  this.i = i; // number
+	}
+
+	TreeNode.prototype = Object.create(Node$1.prototype);
+
+	function treeRoot(root) {
+	  var tree = new TreeNode(root, 0),
+	      node,
+	      nodes = [tree],
+	      child,
+	      children,
+	      i,
+	      n;
+
+	  while (node = nodes.pop()) {
+	    if (children = node._.children) {
+	      node.children = new Array(n = children.length);
+
+	      for (i = n - 1; i >= 0; --i) {
+	        nodes.push(child = node.children[i] = new TreeNode(children[i], i));
+	        child.parent = node;
+	      }
+	    }
+	  }
+
+	  (tree.parent = new TreeNode(null, 0)).children = [tree];
+	  return tree;
+	} // Node-link tree diagram using the Reingold-Tilford "tidy" algorithm
+
+
+	function tree () {
+	  var separation = defaultSeparation,
+	      dx = 1,
+	      dy = 1,
+	      nodeSize = null;
+
+	  function tree(root) {
+	    var t = treeRoot(root); // Compute the layout using Buchheim et al.’s algorithm.
+
+	    t.eachAfter(firstWalk), t.parent.m = -t.z;
+	    t.eachBefore(secondWalk); // If a fixed node size is specified, scale x and y.
+
+	    if (nodeSize) root.eachBefore(sizeNode); // If a fixed tree size is specified, scale x and y based on the extent.
+	    // Compute the left-most, right-most, and depth-most nodes for extents.
+	    else {
+	      var left = root,
+	          right = root,
+	          bottom = root;
+	      root.eachBefore(function (node) {
+	        if (node.x < left.x) left = node;
+	        if (node.x > right.x) right = node;
+	        if (node.depth > bottom.depth) bottom = node;
+	      });
+	      var s = left === right ? 1 : separation(left, right) / 2,
+	          tx = s - left.x,
+	          kx = dx / (right.x + s + tx),
+	          ky = dy / (bottom.depth || 1);
+	      root.eachBefore(function (node) {
+	        node.x = (node.x + tx) * kx;
+	        node.y = node.depth * ky;
+	      });
+	    }
+	    return root;
+	  } // Computes a preliminary x-coordinate for v. Before that, FIRST WALK is
+	  // applied recursively to the children of v, as well as the function
+	  // APPORTION. After spacing out the children by calling EXECUTE SHIFTS, the
+	  // node v is placed to the midpoint of its outermost children.
+
+
+	  function firstWalk(v) {
+	    var children = v.children,
+	        siblings = v.parent.children,
+	        w = v.i ? siblings[v.i - 1] : null;
+
+	    if (children) {
+	      executeShifts(v);
+	      var midpoint = (children[0].z + children[children.length - 1].z) / 2;
+
+	      if (w) {
+	        v.z = w.z + separation(v._, w._);
+	        v.m = v.z - midpoint;
+	      } else {
+	        v.z = midpoint;
+	      }
+	    } else if (w) {
+	      v.z = w.z + separation(v._, w._);
+	    }
+
+	    v.parent.A = apportion(v, w, v.parent.A || siblings[0]);
+	  } // Computes all real x-coordinates by summing up the modifiers recursively.
+
+
+	  function secondWalk(v) {
+	    v._.x = v.z + v.parent.m;
+	    v.m += v.parent.m;
+	  } // The core of the algorithm. Here, a new subtree is combined with the
+	  // previous subtrees. Threads are used to traverse the inside and outside
+	  // contours of the left and right subtree up to the highest common level. The
+	  // vertices used for the traversals are vi+, vi-, vo-, and vo+, where the
+	  // superscript o means outside and i means inside, the subscript - means left
+	  // subtree and + means right subtree. For summing up the modifiers along the
+	  // contour, we use respective variables si+, si-, so-, and so+. Whenever two
+	  // nodes of the inside contours conflict, we compute the left one of the
+	  // greatest uncommon ancestors using the function ANCESTOR and call MOVE
+	  // SUBTREE to shift the subtree and prepare the shifts of smaller subtrees.
+	  // Finally, we add a new thread (if necessary).
+
+
+	  function apportion(v, w, ancestor) {
+	    if (w) {
+	      var vip = v,
+	          vop = v,
+	          vim = w,
+	          vom = vip.parent.children[0],
+	          sip = vip.m,
+	          sop = vop.m,
+	          sim = vim.m,
+	          som = vom.m,
+	          shift;
+
+	      while (vim = nextRight(vim), vip = nextLeft(vip), vim && vip) {
+	        vom = nextLeft(vom);
+	        vop = nextRight(vop);
+	        vop.a = v;
+	        shift = vim.z + sim - vip.z - sip + separation(vim._, vip._);
+
+	        if (shift > 0) {
+	          moveSubtree(nextAncestor(vim, v, ancestor), v, shift);
+	          sip += shift;
+	          sop += shift;
+	        }
+
+	        sim += vim.m;
+	        sip += vip.m;
+	        som += vom.m;
+	        sop += vop.m;
+	      }
+
+	      if (vim && !nextRight(vop)) {
+	        vop.t = vim;
+	        vop.m += sim - sop;
+	      }
+
+	      if (vip && !nextLeft(vom)) {
+	        vom.t = vip;
+	        vom.m += sip - som;
+	        ancestor = v;
+	      }
+	    }
+
+	    return ancestor;
+	  }
+
+	  function sizeNode(node) {
+	    node.x *= dx;
+	    node.y = node.depth * dy;
+	  }
+
+	  tree.separation = function (x) {
+	    return arguments.length ? (separation = x, tree) : separation;
+	  };
+
+	  tree.size = function (x) {
+	    return arguments.length ? (nodeSize = false, dx = +x[0], dy = +x[1], tree) : nodeSize ? null : [dx, dy];
+	  };
+
+	  tree.nodeSize = function (x) {
+	    return arguments.length ? (nodeSize = true, dx = +x[0], dy = +x[1], tree) : nodeSize ? [dx, dy] : null;
+	  };
+
+	  return tree;
+	}
+
+	var forceTree = function forceTree(ecosystem, element) {
+	  var width = 200;
+	  var height = width;
+	  var links = ecosystem.links();
+	  var nodes = ecosystem.descendants();
+	  var simulation$1 = simulation(nodes).force('link', link$1(links).id(function (d) {
+	    return d.id;
+	  }).distance(0).strength(1)).force('charge', manyBody().strength(-50)).force('x', x$1()).force('y', y$1());
+	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
+	  var link = svg.append('g').attr('stroke', '#999').attr('stroke-opacity', 0.6).selectAll('line').data(links).join('line');
+
+	  var drag$1 = function drag$1(simulation) {
+	    function dragstarted(event, d) {
+	      if (!event.active) simulation.alphaTarget(0.3).restart();
+	      d.fx = d.x;
+	      d.fy = d.y;
+	    }
+
+	    function dragged(event, d) {
+	      d.fx = event.x;
+	      d.fy = event.y;
+	    }
+
+	    function dragended(event, d) {
+	      if (!event.active) simulation.alphaTarget(0);
+	      d.fx = null;
+	      d.fy = null;
+	    }
+
+	    return drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
+	  };
+
+	  var tooltip = element.append('div').attr('class', 'tooltip hide');
+
+	  var showTooltip = function showTooltip(entity) {
+	    var _entity$data = entity.data,
+	        id = _entity$data.id,
+	        name = _entity$data.name,
+	        type = _entity$data.type;
+	    var content = "\n      <h1>".concat(name || id, " (").concat(type, ")</h1>\n      <p>").concat(nodePath(entity), "</p>\n    ");
+	    tooltip.classed('hide', false);
+	    tooltip.html(content);
+	  };
+
+	  var hideTooltip = function hideTooltip(entity) {
+	    tooltip.classed('hide', !entity.selected);
+	  };
+
+	  var node = svg.append('g').selectAll('circle').data(nodes).join('circle').attr('class', function (d) {
+	    return d.data.type;
+	  }).attr('r', 3.5).call(drag$1(simulation$1)).on('mouseover', function (_, i) {
+	    return showTooltip(i);
+	  }).on('mouseout', function (_, i) {
+	    return hideTooltip(i);
+	  }).on('click', function (_, i) {
+	    node.enter().selected = false;
+	    i.selected = true;
+	  });
+
+	  var nodePath = function nodePath(d) {
+	    return d.ancestors().map(function (d) {
+	      return d.data.id;
+	    }).reverse().join('/');
+	  };
+
+	  node.append('title').text(function (d) {
+	    return nodePath(d);
+	  });
+	  simulation$1.on('tick', function () {
+	    link.attr('x1', function (d) {
+	      return d.source.x;
+	    }).attr('y1', function (d) {
+	      return d.source.y;
+	    }).attr('x2', function (d) {
+	      return d.target.x;
+	    }).attr('y2', function (d) {
+	      return d.target.y;
+	    });
+	    node.attr('cx', function (d) {
+	      return d.x;
+	    }).attr('cy', function (d) {
+	      return d.y;
+	    });
+	  }); // WAT DIS? invalidation.then(() => simulation.stop());
+
+	  return svg.node();
+	};
+
+	var runtime = {exports: {}};
+
+	/**
+	 * Copyright (c) 2014-present, Facebook, Inc.
+	 *
+	 * This source code is licensed under the MIT license found in the
+	 * LICENSE file in the root directory of this source tree.
+	 */
+
+	(function (module) {
+	  var runtime = function (exports) {
+
+	    var Op = Object.prototype;
+	    var hasOwn = Op.hasOwnProperty;
+	    var undefined$1; // More compressible than void 0.
+
+	    var $Symbol = typeof Symbol === "function" ? Symbol : {};
+	    var iteratorSymbol = $Symbol.iterator || "@@iterator";
+	    var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+	    var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+	    function define(obj, key, value) {
+	      Object.defineProperty(obj, key, {
+	        value: value,
+	        enumerable: true,
+	        configurable: true,
+	        writable: true
+	      });
+	      return obj[key];
+	    }
+
+	    try {
+	      // IE 8 has a broken Object.defineProperty that only works on DOM objects.
+	      define({}, "");
+	    } catch (err) {
+	      define = function (obj, key, value) {
+	        return obj[key] = value;
+	      };
+	    }
+
+	    function wrap(innerFn, outerFn, self, tryLocsList) {
+	      // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+	      var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+	      var generator = Object.create(protoGenerator.prototype);
+	      var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
+	      // .throw, and .return methods.
+
+	      generator._invoke = makeInvokeMethod(innerFn, self, context);
+	      return generator;
+	    }
+
+	    exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
+	    // record like context.tryEntries[i].completion. This interface could
+	    // have been (and was previously) designed to take a closure to be
+	    // invoked without arguments, but in all the cases we care about we
+	    // already have an existing method we want to call, so there's no need
+	    // to create a new function object. We can even get away with assuming
+	    // the method takes exactly one argument, since that happens to be true
+	    // in every case, so we don't have to touch the arguments object. The
+	    // only additional allocation required is the completion record, which
+	    // has a stable shape and so hopefully should be cheap to allocate.
+
+	    function tryCatch(fn, obj, arg) {
+	      try {
+	        return {
+	          type: "normal",
+	          arg: fn.call(obj, arg)
+	        };
+	      } catch (err) {
+	        return {
+	          type: "throw",
+	          arg: err
+	        };
+	      }
+	    }
+
+	    var GenStateSuspendedStart = "suspendedStart";
+	    var GenStateSuspendedYield = "suspendedYield";
+	    var GenStateExecuting = "executing";
+	    var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
+	    // breaking out of the dispatch switch statement.
+
+	    var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
+	    // .constructor.prototype properties for functions that return Generator
+	    // objects. For full spec compliance, you may wish to configure your
+	    // minifier not to mangle the names of these two functions.
+
+	    function Generator() {}
+
+	    function GeneratorFunction() {}
+
+	    function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
+	    // don't natively support it.
+
+
+	    var IteratorPrototype = {};
+	    define(IteratorPrototype, iteratorSymbol, function () {
+	      return this;
+	    });
+	    var getProto = Object.getPrototypeOf;
+	    var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+
+	    if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+	      // This environment has a native %IteratorPrototype%; use it instead
+	      // of the polyfill.
+	      IteratorPrototype = NativeIteratorPrototype;
+	    }
+
+	    var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
+	    GeneratorFunction.prototype = GeneratorFunctionPrototype;
+	    define(Gp, "constructor", GeneratorFunctionPrototype);
+	    define(GeneratorFunctionPrototype, "constructor", GeneratorFunction);
+	    GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
+	    // Iterator interface in terms of a single ._invoke method.
+
+	    function defineIteratorMethods(prototype) {
+	      ["next", "throw", "return"].forEach(function (method) {
+	        define(prototype, method, function (arg) {
+	          return this._invoke(method, arg);
+	        });
+	      });
+	    }
+
+	    exports.isGeneratorFunction = function (genFun) {
+	      var ctor = typeof genFun === "function" && genFun.constructor;
+	      return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
+	      // do is to check its .name property.
+	      (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
+	    };
+
+	    exports.mark = function (genFun) {
+	      if (Object.setPrototypeOf) {
+	        Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+	      } else {
+	        genFun.__proto__ = GeneratorFunctionPrototype;
+	        define(genFun, toStringTagSymbol, "GeneratorFunction");
+	      }
+
+	      genFun.prototype = Object.create(Gp);
+	      return genFun;
+	    }; // Within the body of any async function, `await x` is transformed to
+	    // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+	    // `hasOwn.call(value, "__await")` to determine if the yielded value is
+	    // meant to be awaited.
+
+
+	    exports.awrap = function (arg) {
+	      return {
+	        __await: arg
+	      };
+	    };
+
+	    function AsyncIterator(generator, PromiseImpl) {
+	      function invoke(method, arg, resolve, reject) {
+	        var record = tryCatch(generator[method], generator, arg);
+
+	        if (record.type === "throw") {
+	          reject(record.arg);
+	        } else {
+	          var result = record.arg;
+	          var value = result.value;
+
+	          if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
+	            return PromiseImpl.resolve(value.__await).then(function (value) {
+	              invoke("next", value, resolve, reject);
+	            }, function (err) {
+	              invoke("throw", err, resolve, reject);
+	            });
+	          }
+
+	          return PromiseImpl.resolve(value).then(function (unwrapped) {
+	            // When a yielded Promise is resolved, its final value becomes
+	            // the .value of the Promise<{value,done}> result for the
+	            // current iteration.
+	            result.value = unwrapped;
+	            resolve(result);
+	          }, function (error) {
+	            // If a rejected Promise was yielded, throw the rejection back
+	            // into the async generator function so it can be handled there.
+	            return invoke("throw", error, resolve, reject);
+	          });
+	        }
+	      }
+
+	      var previousPromise;
+
+	      function enqueue(method, arg) {
+	        function callInvokeWithMethodAndArg() {
+	          return new PromiseImpl(function (resolve, reject) {
+	            invoke(method, arg, resolve, reject);
+	          });
+	        }
+
+	        return previousPromise = // If enqueue has been called before, then we want to wait until
+	        // all previous Promises have been resolved before calling invoke,
+	        // so that results are always delivered in the correct order. If
+	        // enqueue has not been called before, then it is important to
+	        // call invoke immediately, without waiting on a callback to fire,
+	        // so that the async generator function has the opportunity to do
+	        // any necessary setup in a predictable way. This predictability
+	        // is why the Promise constructor synchronously invokes its
+	        // executor callback, and why async functions synchronously
+	        // execute code before the first await. Since we implement simple
+	        // async functions in terms of async generators, it is especially
+	        // important to get this right, even though it requires care.
+	        previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
+	        // invocations of the iterator.
+	        callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+	      } // Define the unified helper method that is used to implement .next,
+	      // .throw, and .return (see defineIteratorMethods).
+
+
+	      this._invoke = enqueue;
+	    }
+
+	    defineIteratorMethods(AsyncIterator.prototype);
+	    define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
+	      return this;
+	    });
+	    exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
+	    // AsyncIterator objects; they just return a Promise for the value of
+	    // the final result produced by the iterator.
+
+	    exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+	      if (PromiseImpl === void 0) PromiseImpl = Promise;
+	      var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
+	      return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
+	      : iter.next().then(function (result) {
+	        return result.done ? result.value : iter.next();
+	      });
+	    };
+
+	    function makeInvokeMethod(innerFn, self, context) {
+	      var state = GenStateSuspendedStart;
+	      return function invoke(method, arg) {
+	        if (state === GenStateExecuting) {
+	          throw new Error("Generator is already running");
+	        }
+
+	        if (state === GenStateCompleted) {
+	          if (method === "throw") {
+	            throw arg;
+	          } // Be forgiving, per 25.3.3.3.3 of the spec:
+	          // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+
+
+	          return doneResult();
+	        }
+
+	        context.method = method;
+	        context.arg = arg;
+
+	        while (true) {
+	          var delegate = context.delegate;
+
+	          if (delegate) {
+	            var delegateResult = maybeInvokeDelegate(delegate, context);
+
+	            if (delegateResult) {
+	              if (delegateResult === ContinueSentinel) continue;
+	              return delegateResult;
+	            }
+	          }
+
+	          if (context.method === "next") {
+	            // Setting context._sent for legacy support of Babel's
+	            // function.sent implementation.
+	            context.sent = context._sent = context.arg;
+	          } else if (context.method === "throw") {
+	            if (state === GenStateSuspendedStart) {
+	              state = GenStateCompleted;
+	              throw context.arg;
+	            }
+
+	            context.dispatchException(context.arg);
+	          } else if (context.method === "return") {
+	            context.abrupt("return", context.arg);
+	          }
+
+	          state = GenStateExecuting;
+	          var record = tryCatch(innerFn, self, context);
+
+	          if (record.type === "normal") {
+	            // If an exception is thrown from innerFn, we leave state ===
+	            // GenStateExecuting and loop back for another invocation.
+	            state = context.done ? GenStateCompleted : GenStateSuspendedYield;
+
+	            if (record.arg === ContinueSentinel) {
+	              continue;
+	            }
+
+	            return {
+	              value: record.arg,
+	              done: context.done
+	            };
+	          } else if (record.type === "throw") {
+	            state = GenStateCompleted; // Dispatch the exception by looping back around to the
+	            // context.dispatchException(context.arg) call above.
+
+	            context.method = "throw";
+	            context.arg = record.arg;
+	          }
+	        }
+	      };
+	    } // Call delegate.iterator[context.method](context.arg) and handle the
+	    // result, either by returning a { value, done } result from the
+	    // delegate iterator, or by modifying context.method and context.arg,
+	    // setting context.delegate to null, and returning the ContinueSentinel.
+
+
+	    function maybeInvokeDelegate(delegate, context) {
+	      var method = delegate.iterator[context.method];
+
+	      if (method === undefined$1) {
+	        // A .throw or .return when the delegate iterator has no .throw
+	        // method always terminates the yield* loop.
+	        context.delegate = null;
+
+	        if (context.method === "throw") {
+	          // Note: ["return"] must be used for ES3 parsing compatibility.
+	          if (delegate.iterator["return"]) {
+	            // If the delegate iterator has a return method, give it a
+	            // chance to clean up.
+	            context.method = "return";
+	            context.arg = undefined$1;
+	            maybeInvokeDelegate(delegate, context);
+
+	            if (context.method === "throw") {
+	              // If maybeInvokeDelegate(context) changed context.method from
+	              // "return" to "throw", let that override the TypeError below.
+	              return ContinueSentinel;
+	            }
+	          }
+
+	          context.method = "throw";
+	          context.arg = new TypeError("The iterator does not provide a 'throw' method");
+	        }
+
+	        return ContinueSentinel;
+	      }
+
+	      var record = tryCatch(method, delegate.iterator, context.arg);
+
+	      if (record.type === "throw") {
+	        context.method = "throw";
+	        context.arg = record.arg;
+	        context.delegate = null;
+	        return ContinueSentinel;
+	      }
+
+	      var info = record.arg;
+
+	      if (!info) {
+	        context.method = "throw";
+	        context.arg = new TypeError("iterator result is not an object");
+	        context.delegate = null;
+	        return ContinueSentinel;
+	      }
+
+	      if (info.done) {
+	        // Assign the result of the finished delegate to the temporary
+	        // variable specified by delegate.resultName (see delegateYield).
+	        context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
+
+	        context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
+	        // exception, let the outer generator proceed normally. If
+	        // context.method was "next", forget context.arg since it has been
+	        // "consumed" by the delegate iterator. If context.method was
+	        // "return", allow the original .return call to continue in the
+	        // outer generator.
+
+	        if (context.method !== "return") {
+	          context.method = "next";
+	          context.arg = undefined$1;
+	        }
+	      } else {
+	        // Re-yield the result returned by the delegate method.
+	        return info;
+	      } // The delegate iterator is finished, so forget it and continue with
+	      // the outer generator.
+
+
+	      context.delegate = null;
+	      return ContinueSentinel;
+	    } // Define Generator.prototype.{next,throw,return} in terms of the
+	    // unified ._invoke helper method.
+
+
+	    defineIteratorMethods(Gp);
+	    define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
+	    // @@iterator function is called on it. Some browsers' implementations of the
+	    // iterator prototype chain incorrectly implement this, causing the Generator
+	    // object to not be returned from this call. This ensures that doesn't happen.
+	    // See https://github.com/facebook/regenerator/issues/274 for more details.
+
+	    define(Gp, iteratorSymbol, function () {
+	      return this;
+	    });
+	    define(Gp, "toString", function () {
+	      return "[object Generator]";
+	    });
+
+	    function pushTryEntry(locs) {
+	      var entry = {
+	        tryLoc: locs[0]
+	      };
+
+	      if (1 in locs) {
+	        entry.catchLoc = locs[1];
+	      }
+
+	      if (2 in locs) {
+	        entry.finallyLoc = locs[2];
+	        entry.afterLoc = locs[3];
+	      }
+
+	      this.tryEntries.push(entry);
+	    }
+
+	    function resetTryEntry(entry) {
+	      var record = entry.completion || {};
+	      record.type = "normal";
+	      delete record.arg;
+	      entry.completion = record;
+	    }
+
+	    function Context(tryLocsList) {
+	      // The root entry object (effectively a try statement without a catch
+	      // or a finally block) gives us a place to store values thrown from
+	      // locations where there is no enclosing try statement.
+	      this.tryEntries = [{
+	        tryLoc: "root"
+	      }];
+	      tryLocsList.forEach(pushTryEntry, this);
+	      this.reset(true);
+	    }
+
+	    exports.keys = function (object) {
+	      var keys = [];
+
+	      for (var key in object) {
+	        keys.push(key);
+	      }
+
+	      keys.reverse(); // Rather than returning an object with a next method, we keep
+	      // things simple and return the next function itself.
+
+	      return function next() {
+	        while (keys.length) {
+	          var key = keys.pop();
+
+	          if (key in object) {
+	            next.value = key;
+	            next.done = false;
+	            return next;
+	          }
+	        } // To avoid creating an additional object, we just hang the .value
+	        // and .done properties off the next function object itself. This
+	        // also ensures that the minifier will not anonymize the function.
+
+
+	        next.done = true;
+	        return next;
+	      };
+	    };
+
+	    function values(iterable) {
+	      if (iterable) {
+	        var iteratorMethod = iterable[iteratorSymbol];
+
+	        if (iteratorMethod) {
+	          return iteratorMethod.call(iterable);
+	        }
+
+	        if (typeof iterable.next === "function") {
+	          return iterable;
+	        }
+
+	        if (!isNaN(iterable.length)) {
+	          var i = -1,
+	              next = function next() {
+	            while (++i < iterable.length) {
+	              if (hasOwn.call(iterable, i)) {
+	                next.value = iterable[i];
+	                next.done = false;
+	                return next;
+	              }
+	            }
+
+	            next.value = undefined$1;
+	            next.done = true;
+	            return next;
+	          };
+
+	          return next.next = next;
+	        }
+	      } // Return an iterator with no values.
+
+
+	      return {
+	        next: doneResult
+	      };
+	    }
+
+	    exports.values = values;
+
+	    function doneResult() {
+	      return {
+	        value: undefined$1,
+	        done: true
+	      };
+	    }
+
+	    Context.prototype = {
+	      constructor: Context,
+	      reset: function (skipTempReset) {
+	        this.prev = 0;
+	        this.next = 0; // Resetting context._sent for legacy support of Babel's
+	        // function.sent implementation.
+
+	        this.sent = this._sent = undefined$1;
+	        this.done = false;
+	        this.delegate = null;
+	        this.method = "next";
+	        this.arg = undefined$1;
+	        this.tryEntries.forEach(resetTryEntry);
+
+	        if (!skipTempReset) {
+	          for (var name in this) {
+	            // Not sure about the optimal order of these conditions:
+	            if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
+	              this[name] = undefined$1;
+	            }
+	          }
+	        }
+	      },
+	      stop: function () {
+	        this.done = true;
+	        var rootEntry = this.tryEntries[0];
+	        var rootRecord = rootEntry.completion;
+
+	        if (rootRecord.type === "throw") {
+	          throw rootRecord.arg;
+	        }
+
+	        return this.rval;
+	      },
+	      dispatchException: function (exception) {
+	        if (this.done) {
+	          throw exception;
+	        }
+
+	        var context = this;
+
+	        function handle(loc, caught) {
+	          record.type = "throw";
+	          record.arg = exception;
+	          context.next = loc;
+
+	          if (caught) {
+	            // If the dispatched exception was caught by a catch block,
+	            // then let that catch block handle the exception normally.
+	            context.method = "next";
+	            context.arg = undefined$1;
+	          }
+
+	          return !!caught;
+	        }
+
+	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+	          var entry = this.tryEntries[i];
+	          var record = entry.completion;
+
+	          if (entry.tryLoc === "root") {
+	            // Exception thrown outside of any try block that could handle
+	            // it, so set the completion value of the entire function to
+	            // throw the exception.
+	            return handle("end");
+	          }
+
+	          if (entry.tryLoc <= this.prev) {
+	            var hasCatch = hasOwn.call(entry, "catchLoc");
+	            var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+	            if (hasCatch && hasFinally) {
+	              if (this.prev < entry.catchLoc) {
+	                return handle(entry.catchLoc, true);
+	              } else if (this.prev < entry.finallyLoc) {
+	                return handle(entry.finallyLoc);
+	              }
+	            } else if (hasCatch) {
+	              if (this.prev < entry.catchLoc) {
+	                return handle(entry.catchLoc, true);
+	              }
+	            } else if (hasFinally) {
+	              if (this.prev < entry.finallyLoc) {
+	                return handle(entry.finallyLoc);
+	              }
+	            } else {
+	              throw new Error("try statement without catch or finally");
+	            }
+	          }
+	        }
+	      },
+	      abrupt: function (type, arg) {
+	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+	          var entry = this.tryEntries[i];
+
+	          if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
+	            var finallyEntry = entry;
+	            break;
+	          }
+	        }
+
+	        if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
+	          // Ignore the finally entry if control is not jumping to a
+	          // location outside the try/catch block.
+	          finallyEntry = null;
+	        }
+
+	        var record = finallyEntry ? finallyEntry.completion : {};
+	        record.type = type;
+	        record.arg = arg;
+
+	        if (finallyEntry) {
+	          this.method = "next";
+	          this.next = finallyEntry.finallyLoc;
+	          return ContinueSentinel;
+	        }
+
+	        return this.complete(record);
+	      },
+	      complete: function (record, afterLoc) {
+	        if (record.type === "throw") {
+	          throw record.arg;
+	        }
+
+	        if (record.type === "break" || record.type === "continue") {
+	          this.next = record.arg;
+	        } else if (record.type === "return") {
+	          this.rval = this.arg = record.arg;
+	          this.method = "return";
+	          this.next = "end";
+	        } else if (record.type === "normal" && afterLoc) {
+	          this.next = afterLoc;
+	        }
+
+	        return ContinueSentinel;
+	      },
+	      finish: function (finallyLoc) {
+	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+	          var entry = this.tryEntries[i];
+
+	          if (entry.finallyLoc === finallyLoc) {
+	            this.complete(entry.completion, entry.afterLoc);
+	            resetTryEntry(entry);
+	            return ContinueSentinel;
+	          }
+	        }
+	      },
+	      "catch": function (tryLoc) {
+	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+	          var entry = this.tryEntries[i];
+
+	          if (entry.tryLoc === tryLoc) {
+	            var record = entry.completion;
+
+	            if (record.type === "throw") {
+	              var thrown = record.arg;
+	              resetTryEntry(entry);
+	            }
+
+	            return thrown;
+	          }
+	        } // The context.catch method must only be called with a location
+	        // argument that corresponds to a known catch block.
+
+
+	        throw new Error("illegal catch attempt");
+	      },
+	      delegateYield: function (iterable, resultName, nextLoc) {
+	        this.delegate = {
+	          iterator: values(iterable),
+	          resultName: resultName,
+	          nextLoc: nextLoc
+	        };
+
+	        if (this.method === "next") {
+	          // Deliberately forget the last sent value so that we don't
+	          // accidentally pass it on to the delegate.
+	          this.arg = undefined$1;
+	        }
+
+	        return ContinueSentinel;
+	      }
+	    }; // Regardless of whether this script is executing as a CommonJS module
+	    // or not, return the runtime object so that we can declare the variable
+	    // regeneratorRuntime in the outer scope, which allows this module to be
+	    // injected easily by `bin/regenerator --include-runtime script.js`.
+
+	    return exports;
+	  }( // If this script is executing as a CommonJS module, use module.exports
+	  // as the regeneratorRuntime namespace. Otherwise create a new empty
+	  // object. Either way, the resulting object will be used to initialize
+	  // the regeneratorRuntime variable at the top of this file.
+	  module.exports );
+
+	  try {
+	    regeneratorRuntime = runtime;
+	  } catch (accidentalStrictMode) {
+	    // This module should not be running in strict mode, so the above
+	    // assignment should always work unless something is misconfigured. Just
+	    // in case runtime.js accidentally runs in strict mode, in modern engines
+	    // we can explicitly access globalThis. In older engines we can escape
+	    // strict mode using a global Function call. This could conceivably fail
+	    // if a Content Security Policy forbids using Function, but in that case
+	    // the proper solution is to fix the accidental strict mode problem. If
+	    // you've misconfigured your bundler to force strict mode and applied a
+	    // CSP to forbid Function, and you're not willing to fix either of those
+	    // problems, please detail your unique predicament in a GitHub issue.
+	    if (typeof globalThis === "object") {
+	      globalThis.regeneratorRuntime = runtime;
+	    } else {
+	      Function("r", "regeneratorRuntime = r")(runtime);
+	    }
+	  }
+	})(runtime);
+
+	var sid = function () {
+	  var _marked = /*#__PURE__*/regeneratorRuntime.mark(sequence);
+
+	  var sequences = {};
+
+	  function sequence(ref) {
+	    var i;
+	    return regeneratorRuntime.wrap(function sequence$(_context) {
+	      while (1) {
+	        switch (_context.prev = _context.next) {
+	          case 0:
+	            i = 0;
+
+	          case 1:
+
+	            _context.next = 4;
+	            return "".concat(ref, "-").concat(i);
+
+	          case 4:
+	            i++;
+	            _context.next = 1;
+	            break;
+
+	          case 7:
+	          case "end":
+	            return _context.stop();
+	        }
+	      }
+	    }, _marked);
+	  }
+
+	  return function (id) {
+	    if (!sequences[id]) sequences[id] = sequence(id);
+	    return sequences[id].next().value;
+	  };
+	}();
+	function autoBox() {
+	  var _this$getBBox = this.getBBox(),
+	      x = _this$getBBox.x,
+	      y = _this$getBBox.y,
+	      width = _this$getBBox.width,
+	      height = _this$getBBox.height;
+
+	  return [x, y, width, height];
+	}
+
+	class InternMap extends Map {
+	  constructor(entries, key = keyof) {
+	    super();
+	    Object.defineProperties(this, {
+	      _intern: {
+	        value: new Map()
+	      },
+	      _key: {
+	        value: key
+	      }
+	    });
+	    if (entries != null) for (const [key, value] of entries) this.set(key, value);
+	  }
+
+	  get(key) {
+	    return super.get(intern_get(this, key));
+	  }
+
+	  has(key) {
+	    return super.has(intern_get(this, key));
+	  }
+
+	  set(key, value) {
+	    return super.set(intern_set(this, key), value);
+	  }
+
+	  delete(key) {
+	    return super.delete(intern_delete(this, key));
+	  }
+
+	}
+
+	function intern_get({
+	  _intern,
+	  _key
+	}, value) {
+	  const key = _key(value);
+
+	  return _intern.has(key) ? _intern.get(key) : value;
+	}
+
+	function intern_set({
+	  _intern,
+	  _key
+	}, value) {
+	  const key = _key(value);
+
+	  if (_intern.has(key)) return _intern.get(key);
+
+	  _intern.set(key, value);
+
+	  return value;
+	}
+
+	function intern_delete({
+	  _intern,
+	  _key
+	}, value) {
+	  const key = _key(value);
+
+	  if (_intern.has(key)) {
+	    value = _intern.get(key);
+
+	    _intern.delete(key);
+	  }
+
+	  return value;
+	}
+
+	function keyof(value) {
+	  return value !== null && typeof value === "object" ? value.valueOf() : value;
+	}
+
+	function identity$3(x) {
+	  return x;
+	}
+
+	function group(values, ...keys) {
+	  return nest(values, identity$3, identity$3, keys);
+	}
+
+	function nest(values, map, reduce, keys) {
+	  return function regroup(values, i) {
+	    if (i >= keys.length) return reduce(values);
+	    const groups = new InternMap();
+	    const keyof = keys[i++];
+	    let index = -1;
+
+	    for (const value of values) {
+	      const key = keyof(value, ++index, values);
+	      const group = groups.get(key);
+	      if (group) group.push(value);else groups.set(key, [value]);
+	    }
+
+	    for (const [key, values] of groups) {
+	      groups.set(key, regroup(values, i));
+	    }
+
+	    return map(groups);
+	  }(values, 0);
+	}
+
+	var e10 = Math.sqrt(50),
+	    e5 = Math.sqrt(10),
+	    e2 = Math.sqrt(2);
+	function ticks(start, stop, count) {
+	  var reverse,
+	      i = -1,
+	      n,
+	      ticks,
+	      step;
+	  stop = +stop, start = +start, count = +count;
+	  if (start === stop && count > 0) return [start];
+	  if (reverse = stop < start) n = start, start = stop, stop = n;
+	  if ((step = tickIncrement(start, stop, count)) === 0 || !isFinite(step)) return [];
+
+	  if (step > 0) {
+	    let r0 = Math.round(start / step),
+	        r1 = Math.round(stop / step);
+	    if (r0 * step < start) ++r0;
+	    if (r1 * step > stop) --r1;
+	    ticks = new Array(n = r1 - r0 + 1);
+
+	    while (++i < n) ticks[i] = (r0 + i) * step;
+	  } else {
+	    step = -step;
+	    let r0 = Math.round(start * step),
+	        r1 = Math.round(stop * step);
+	    if (r0 / step < start) ++r0;
+	    if (r1 / step > stop) --r1;
+	    ticks = new Array(n = r1 - r0 + 1);
+
+	    while (++i < n) ticks[i] = (r0 + i) / step;
+	  }
+
+	  if (reverse) ticks.reverse();
+	  return ticks;
+	}
+	function tickIncrement(start, stop, count) {
+	  var step = (stop - start) / Math.max(0, count),
+	      power = Math.floor(Math.log(step) / Math.LN10),
+	      error = step / Math.pow(10, power);
+	  return power >= 0 ? (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1) * Math.pow(10, power) : -Math.pow(10, -power) / (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1);
+	}
+	function tickStep(start, stop, count) {
+	  var step0 = Math.abs(stop - start) / Math.max(0, count),
+	      step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
+	      error = step0 / step1;
+	  if (error >= e10) step1 *= 10;else if (error >= e5) step1 *= 5;else if (error >= e2) step1 *= 2;
+	  return stop < start ? -step1 : step1;
+	}
+
 	function define (constructor, factory, prototype) {
 	  constructor.prototype = factory.prototype = prototype;
 	  prototype.constructor = constructor;
@@ -3702,7 +6815,7 @@
 	  }
 	}));
 
-	var constant$3 = (x => () => x);
+	var constant$1 = (x => () => x);
 
 	function linear(a, d) {
 	  return function (t) {
@@ -3718,16 +6831,16 @@
 
 	function hue(a, b) {
 	  var d = b - a;
-	  return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$3(isNaN(a) ? b : a);
+	  return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$1(isNaN(a) ? b : a);
 	}
 	function gamma(y) {
 	  return (y = +y) === 1 ? nogamma : function (a, b) {
-	    return b - a ? exponential(a, b, y) : constant$3(isNaN(a) ? b : a);
+	    return b - a ? exponential(a, b, y) : constant$1(isNaN(a) ? b : a);
 	  };
 	}
 	function nogamma(a, b) {
 	  var d = b - a;
-	  return d ? linear(a, d) : constant$3(isNaN(a) ? b : a);
+	  return d ? linear(a, d) : constant$1(isNaN(a) ? b : a);
 	}
 
 	var interpolateRgb = (function rgbGamma(y) {
@@ -3895,7 +7008,7 @@
 	function interpolate$1 (a, b) {
 	  var t = typeof b,
 	      c;
-	  return b == null || t === "boolean" ? constant$3(b) : (t === "number" ? interpolateNumber : t === "string" ? (c = color(b)) ? (b = c, interpolateRgb) : interpolateString : b instanceof color ? interpolateRgb : b instanceof Date ? date : isNumberArray(b) ? numberArray : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object : interpolateNumber)(a, b);
+	  return b == null || t === "boolean" ? constant$1(b) : (t === "number" ? interpolateNumber : t === "string" ? (c = color(b)) ? (b = c, interpolateRgb) : interpolateString : b instanceof color ? interpolateRgb : b instanceof Date ? date : isNumberArray(b) ? numberArray : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object : interpolateNumber)(a, b);
 	}
 
 	function interpolateRound (a, b) {
@@ -4063,142 +7176,6 @@
 	  for (var i = 0; i < n; ++i) samples[i] = interpolator(i / (n - 1));
 
 	  return samples;
-	}
-
-	var frame = 0,
-	    // is an animation frame pending?
-	timeout$1 = 0,
-	    // is a timeout pending?
-	interval = 0,
-	    // are any timers active?
-	pokeDelay = 1000,
-	    // how frequently we check for clock skew
-	taskHead,
-	    taskTail,
-	    clockLast = 0,
-	    clockNow = 0,
-	    clockSkew = 0,
-	    clock = typeof performance === "object" && performance.now ? performance : Date,
-	    setFrame = typeof window === "object" && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function (f) {
-	  setTimeout(f, 17);
-	};
-	function now() {
-	  return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
-	}
-
-	function clearNow() {
-	  clockNow = 0;
-	}
-
-	function Timer() {
-	  this._call = this._time = this._next = null;
-	}
-	Timer.prototype = timer.prototype = {
-	  constructor: Timer,
-	  restart: function (callback, delay, time) {
-	    if (typeof callback !== "function") throw new TypeError("callback is not a function");
-	    time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
-
-	    if (!this._next && taskTail !== this) {
-	      if (taskTail) taskTail._next = this;else taskHead = this;
-	      taskTail = this;
-	    }
-
-	    this._call = callback;
-	    this._time = time;
-	    sleep();
-	  },
-	  stop: function () {
-	    if (this._call) {
-	      this._call = null;
-	      this._time = Infinity;
-	      sleep();
-	    }
-	  }
-	};
-	function timer(callback, delay, time) {
-	  var t = new Timer();
-	  t.restart(callback, delay, time);
-	  return t;
-	}
-	function timerFlush() {
-	  now(); // Get the current time, if not already set.
-
-	  ++frame; // Pretend we’ve set an alarm, if we haven’t already.
-
-	  var t = taskHead,
-	      e;
-
-	  while (t) {
-	    if ((e = clockNow - t._time) >= 0) t._call.call(undefined, e);
-	    t = t._next;
-	  }
-
-	  --frame;
-	}
-
-	function wake() {
-	  clockNow = (clockLast = clock.now()) + clockSkew;
-	  frame = timeout$1 = 0;
-
-	  try {
-	    timerFlush();
-	  } finally {
-	    frame = 0;
-	    nap();
-	    clockNow = 0;
-	  }
-	}
-
-	function poke() {
-	  var now = clock.now(),
-	      delay = now - clockLast;
-	  if (delay > pokeDelay) clockSkew -= delay, clockLast = now;
-	}
-
-	function nap() {
-	  var t0,
-	      t1 = taskHead,
-	      t2,
-	      time = Infinity;
-
-	  while (t1) {
-	    if (t1._call) {
-	      if (time > t1._time) time = t1._time;
-	      t0 = t1, t1 = t1._next;
-	    } else {
-	      t2 = t1._next, t1._next = null;
-	      t1 = t0 ? t0._next = t2 : taskHead = t2;
-	    }
-	  }
-
-	  taskTail = t0;
-	  sleep(time);
-	}
-
-	function sleep(time) {
-	  if (frame) return; // Soonest alarm already set, or will be.
-
-	  if (timeout$1) timeout$1 = clearTimeout(timeout$1);
-	  var delay = time - clockNow; // Strictly less than if we recomputed clockNow.
-
-	  if (delay > 24) {
-	    if (time < Infinity) timeout$1 = setTimeout(wake, time - clock.now() - clockSkew);
-	    if (interval) interval = clearInterval(interval);
-	  } else {
-	    if (!interval) clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
-	    frame = 1, setFrame(wake);
-	  }
-	}
-
-	function timeout (callback, delay, time) {
-	  var t = new Timer();
-	  delay = delay == null ? 0 : +delay;
-	  t.restart(elapsed => {
-	    t.stop();
-	    callback(elapsed + delay);
-	  }, delay, time);
-	  return t;
 	}
 
 	var emptyOn = dispatch("start", "end", "cancel", "interrupt");
@@ -5148,1085 +8125,6 @@
 	  }
 	};
 
-	var EOL = {},
-	    EOF = {},
-	    QUOTE = 34,
-	    NEWLINE = 10,
-	    RETURN = 13;
-
-	function objectConverter(columns) {
-	  return new Function("d", "return {" + columns.map(function (name, i) {
-	    return JSON.stringify(name) + ": d[" + i + "] || \"\"";
-	  }).join(",") + "}");
-	}
-
-	function customConverter(columns, f) {
-	  var object = objectConverter(columns);
-	  return function (row, i) {
-	    return f(object(row), i, columns);
-	  };
-	} // Compute unique columns in order of discovery.
-
-
-	function inferColumns(rows) {
-	  var columnSet = Object.create(null),
-	      columns = [];
-	  rows.forEach(function (row) {
-	    for (var column in row) {
-	      if (!(column in columnSet)) {
-	        columns.push(columnSet[column] = column);
-	      }
-	    }
-	  });
-	  return columns;
-	}
-
-	function pad(value, width) {
-	  var s = value + "",
-	      length = s.length;
-	  return length < width ? new Array(width - length + 1).join(0) + s : s;
-	}
-
-	function formatYear(year) {
-	  return year < 0 ? "-" + pad(-year, 6) : year > 9999 ? "+" + pad(year, 6) : pad(year, 4);
-	}
-
-	function formatDate(date) {
-	  var hours = date.getUTCHours(),
-	      minutes = date.getUTCMinutes(),
-	      seconds = date.getUTCSeconds(),
-	      milliseconds = date.getUTCMilliseconds();
-	  return isNaN(date) ? "Invalid Date" : formatYear(date.getUTCFullYear()) + "-" + pad(date.getUTCMonth() + 1, 2) + "-" + pad(date.getUTCDate(), 2) + (milliseconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "." + pad(milliseconds, 3) + "Z" : seconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "Z" : minutes || hours ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + "Z" : "");
-	}
-
-	function dsvFormat (delimiter) {
-	  var reFormat = new RegExp("[\"" + delimiter + "\n\r]"),
-	      DELIMITER = delimiter.charCodeAt(0);
-
-	  function parse(text, f) {
-	    var convert,
-	        columns,
-	        rows = parseRows(text, function (row, i) {
-	      if (convert) return convert(row, i - 1);
-	      columns = row, convert = f ? customConverter(row, f) : objectConverter(row);
-	    });
-	    rows.columns = columns || [];
-	    return rows;
-	  }
-
-	  function parseRows(text, f) {
-	    var rows = [],
-	        // output rows
-	    N = text.length,
-	        I = 0,
-	        // current character index
-	    n = 0,
-	        // current line number
-	    t,
-	        // current token
-	    eof = N <= 0,
-	        // current token followed by EOF?
-	    eol = false; // current token followed by EOL?
-	    // Strip the trailing newline.
-
-	    if (text.charCodeAt(N - 1) === NEWLINE) --N;
-	    if (text.charCodeAt(N - 1) === RETURN) --N;
-
-	    function token() {
-	      if (eof) return EOF;
-	      if (eol) return eol = false, EOL; // Unescape quotes.
-
-	      var i,
-	          j = I,
-	          c;
-
-	      if (text.charCodeAt(j) === QUOTE) {
-	        while (I++ < N && text.charCodeAt(I) !== QUOTE || text.charCodeAt(++I) === QUOTE);
-
-	        if ((i = I) >= N) eof = true;else if ((c = text.charCodeAt(I++)) === NEWLINE) eol = true;else if (c === RETURN) {
-	          eol = true;
-	          if (text.charCodeAt(I) === NEWLINE) ++I;
-	        }
-	        return text.slice(j + 1, i - 1).replace(/""/g, "\"");
-	      } // Find next delimiter or newline.
-
-
-	      while (I < N) {
-	        if ((c = text.charCodeAt(i = I++)) === NEWLINE) eol = true;else if (c === RETURN) {
-	          eol = true;
-	          if (text.charCodeAt(I) === NEWLINE) ++I;
-	        } else if (c !== DELIMITER) continue;
-	        return text.slice(j, i);
-	      } // Return last token before EOF.
-
-
-	      return eof = true, text.slice(j, N);
-	    }
-
-	    while ((t = token()) !== EOF) {
-	      var row = [];
-
-	      while (t !== EOL && t !== EOF) row.push(t), t = token();
-
-	      if (f && (row = f(row, n++)) == null) continue;
-	      rows.push(row);
-	    }
-
-	    return rows;
-	  }
-
-	  function preformatBody(rows, columns) {
-	    return rows.map(function (row) {
-	      return columns.map(function (column) {
-	        return formatValue(row[column]);
-	      }).join(delimiter);
-	    });
-	  }
-
-	  function format(rows, columns) {
-	    if (columns == null) columns = inferColumns(rows);
-	    return [columns.map(formatValue).join(delimiter)].concat(preformatBody(rows, columns)).join("\n");
-	  }
-
-	  function formatBody(rows, columns) {
-	    if (columns == null) columns = inferColumns(rows);
-	    return preformatBody(rows, columns).join("\n");
-	  }
-
-	  function formatRows(rows) {
-	    return rows.map(formatRow).join("\n");
-	  }
-
-	  function formatRow(row) {
-	    return row.map(formatValue).join(delimiter);
-	  }
-
-	  function formatValue(value) {
-	    return value == null ? "" : value instanceof Date ? formatDate(value) : reFormat.test(value += "") ? "\"" + value.replace(/"/g, "\"\"") + "\"" : value;
-	  }
-
-	  return {
-	    parse: parse,
-	    parseRows: parseRows,
-	    format: format,
-	    formatBody: formatBody,
-	    formatRows: formatRows,
-	    formatRow: formatRow,
-	    formatValue: formatValue
-	  };
-	}
-
-	var csv$1 = dsvFormat(",");
-	var csvParse = csv$1.parse;
-
-	function responseText(response) {
-	  if (!response.ok) throw new Error(response.status + " " + response.statusText);
-	  return response.text();
-	}
-
-	function text (input, init) {
-	  return fetch(input, init).then(responseText);
-	}
-
-	function dsvParse(parse) {
-	  return function (input, init, row) {
-	    if (arguments.length === 2 && typeof init === "function") row = init, init = undefined;
-	    return text(input, init).then(function (response) {
-	      return parse(response, row);
-	    });
-	  };
-	}
-	var csv = dsvParse(csvParse);
-
-	function tree_add (d) {
-	  const x = +this._x.call(null, d),
-	        y = +this._y.call(null, d);
-	  return add(this.cover(x, y), x, y, d);
-	}
-
-	function add(tree, x, y, d) {
-	  if (isNaN(x) || isNaN(y)) return tree; // ignore invalid points
-
-	  var parent,
-	      node = tree._root,
-	      leaf = {
-	    data: d
-	  },
-	      x0 = tree._x0,
-	      y0 = tree._y0,
-	      x1 = tree._x1,
-	      y1 = tree._y1,
-	      xm,
-	      ym,
-	      xp,
-	      yp,
-	      right,
-	      bottom,
-	      i,
-	      j; // If the tree is empty, initialize the root as a leaf.
-
-	  if (!node) return tree._root = leaf, tree; // Find the existing leaf for the new point, or add it.
-
-	  while (node.length) {
-	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
-	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
-	    if (parent = node, !(node = node[i = bottom << 1 | right])) return parent[i] = leaf, tree;
-	  } // Is the new point is exactly coincident with the existing point?
-
-
-	  xp = +tree._x.call(null, node.data);
-	  yp = +tree._y.call(null, node.data);
-	  if (x === xp && y === yp) return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree; // Otherwise, split the leaf node until the old and new point are separated.
-
-	  do {
-	    parent = parent ? parent[i] = new Array(4) : tree._root = new Array(4);
-	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
-	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
-	  } while ((i = bottom << 1 | right) === (j = (yp >= ym) << 1 | xp >= xm));
-
-	  return parent[j] = node, parent[i] = leaf, tree;
-	}
-
-	function addAll(data) {
-	  var d,
-	      i,
-	      n = data.length,
-	      x,
-	      y,
-	      xz = new Array(n),
-	      yz = new Array(n),
-	      x0 = Infinity,
-	      y0 = Infinity,
-	      x1 = -Infinity,
-	      y1 = -Infinity; // Compute the points and their extent.
-
-	  for (i = 0; i < n; ++i) {
-	    if (isNaN(x = +this._x.call(null, d = data[i])) || isNaN(y = +this._y.call(null, d))) continue;
-	    xz[i] = x;
-	    yz[i] = y;
-	    if (x < x0) x0 = x;
-	    if (x > x1) x1 = x;
-	    if (y < y0) y0 = y;
-	    if (y > y1) y1 = y;
-	  } // If there were no (valid) points, abort.
-
-
-	  if (x0 > x1 || y0 > y1) return this; // Expand the tree to cover the new points.
-
-	  this.cover(x0, y0).cover(x1, y1); // Add the new points.
-
-	  for (i = 0; i < n; ++i) {
-	    add(this, xz[i], yz[i], data[i]);
-	  }
-
-	  return this;
-	}
-
-	function tree_cover (x, y) {
-	  if (isNaN(x = +x) || isNaN(y = +y)) return this; // ignore invalid points
-
-	  var x0 = this._x0,
-	      y0 = this._y0,
-	      x1 = this._x1,
-	      y1 = this._y1; // If the quadtree has no extent, initialize them.
-	  // Integer extent are necessary so that if we later double the extent,
-	  // the existing quadrant boundaries don’t change due to floating point error!
-
-	  if (isNaN(x0)) {
-	    x1 = (x0 = Math.floor(x)) + 1;
-	    y1 = (y0 = Math.floor(y)) + 1;
-	  } // Otherwise, double repeatedly to cover.
-	  else {
-	    var z = x1 - x0 || 1,
-	        node = this._root,
-	        parent,
-	        i;
-
-	    while (x0 > x || x >= x1 || y0 > y || y >= y1) {
-	      i = (y < y0) << 1 | x < x0;
-	      parent = new Array(4), parent[i] = node, node = parent, z *= 2;
-
-	      switch (i) {
-	        case 0:
-	          x1 = x0 + z, y1 = y0 + z;
-	          break;
-
-	        case 1:
-	          x0 = x1 - z, y1 = y0 + z;
-	          break;
-
-	        case 2:
-	          x1 = x0 + z, y0 = y1 - z;
-	          break;
-
-	        case 3:
-	          x0 = x1 - z, y0 = y1 - z;
-	          break;
-	      }
-	    }
-
-	    if (this._root && this._root.length) this._root = node;
-	  }
-
-	  this._x0 = x0;
-	  this._y0 = y0;
-	  this._x1 = x1;
-	  this._y1 = y1;
-	  return this;
-	}
-
-	function tree_data () {
-	  var data = [];
-	  this.visit(function (node) {
-	    if (!node.length) do data.push(node.data); while (node = node.next);
-	  });
-	  return data;
-	}
-
-	function tree_extent (_) {
-	  return arguments.length ? this.cover(+_[0][0], +_[0][1]).cover(+_[1][0], +_[1][1]) : isNaN(this._x0) ? undefined : [[this._x0, this._y0], [this._x1, this._y1]];
-	}
-
-	function Quad (node, x0, y0, x1, y1) {
-	  this.node = node;
-	  this.x0 = x0;
-	  this.y0 = y0;
-	  this.x1 = x1;
-	  this.y1 = y1;
-	}
-
-	function tree_find (x, y, radius) {
-	  var data,
-	      x0 = this._x0,
-	      y0 = this._y0,
-	      x1,
-	      y1,
-	      x2,
-	      y2,
-	      x3 = this._x1,
-	      y3 = this._y1,
-	      quads = [],
-	      node = this._root,
-	      q,
-	      i;
-	  if (node) quads.push(new Quad(node, x0, y0, x3, y3));
-	  if (radius == null) radius = Infinity;else {
-	    x0 = x - radius, y0 = y - radius;
-	    x3 = x + radius, y3 = y + radius;
-	    radius *= radius;
-	  }
-
-	  while (q = quads.pop()) {
-	    // Stop searching if this quadrant can’t contain a closer node.
-	    if (!(node = q.node) || (x1 = q.x0) > x3 || (y1 = q.y0) > y3 || (x2 = q.x1) < x0 || (y2 = q.y1) < y0) continue; // Bisect the current quadrant.
-
-	    if (node.length) {
-	      var xm = (x1 + x2) / 2,
-	          ym = (y1 + y2) / 2;
-	      quads.push(new Quad(node[3], xm, ym, x2, y2), new Quad(node[2], x1, ym, xm, y2), new Quad(node[1], xm, y1, x2, ym), new Quad(node[0], x1, y1, xm, ym)); // Visit the closest quadrant first.
-
-	      if (i = (y >= ym) << 1 | x >= xm) {
-	        q = quads[quads.length - 1];
-	        quads[quads.length - 1] = quads[quads.length - 1 - i];
-	        quads[quads.length - 1 - i] = q;
-	      }
-	    } // Visit this point. (Visiting coincident points isn’t necessary!)
-	    else {
-	      var dx = x - +this._x.call(null, node.data),
-	          dy = y - +this._y.call(null, node.data),
-	          d2 = dx * dx + dy * dy;
-
-	      if (d2 < radius) {
-	        var d = Math.sqrt(radius = d2);
-	        x0 = x - d, y0 = y - d;
-	        x3 = x + d, y3 = y + d;
-	        data = node.data;
-	      }
-	    }
-	  }
-
-	  return data;
-	}
-
-	function tree_remove (d) {
-	  if (isNaN(x = +this._x.call(null, d)) || isNaN(y = +this._y.call(null, d))) return this; // ignore invalid points
-
-	  var parent,
-	      node = this._root,
-	      retainer,
-	      previous,
-	      next,
-	      x0 = this._x0,
-	      y0 = this._y0,
-	      x1 = this._x1,
-	      y1 = this._y1,
-	      x,
-	      y,
-	      xm,
-	      ym,
-	      right,
-	      bottom,
-	      i,
-	      j; // If the tree is empty, initialize the root as a leaf.
-
-	  if (!node) return this; // Find the leaf node for the point.
-	  // While descending, also retain the deepest parent with a non-removed sibling.
-
-	  if (node.length) while (true) {
-	    if (right = x >= (xm = (x0 + x1) / 2)) x0 = xm;else x1 = xm;
-	    if (bottom = y >= (ym = (y0 + y1) / 2)) y0 = ym;else y1 = ym;
-	    if (!(parent = node, node = node[i = bottom << 1 | right])) return this;
-	    if (!node.length) break;
-	    if (parent[i + 1 & 3] || parent[i + 2 & 3] || parent[i + 3 & 3]) retainer = parent, j = i;
-	  } // Find the point to remove.
-
-	  while (node.data !== d) if (!(previous = node, node = node.next)) return this;
-
-	  if (next = node.next) delete node.next; // If there are multiple coincident points, remove just the point.
-
-	  if (previous) return next ? previous.next = next : delete previous.next, this; // If this is the root point, remove it.
-
-	  if (!parent) return this._root = next, this; // Remove this leaf.
-
-	  next ? parent[i] = next : delete parent[i]; // If the parent now contains exactly one leaf, collapse superfluous parents.
-
-	  if ((node = parent[0] || parent[1] || parent[2] || parent[3]) && node === (parent[3] || parent[2] || parent[1] || parent[0]) && !node.length) {
-	    if (retainer) retainer[j] = node;else this._root = node;
-	  }
-
-	  return this;
-	}
-	function removeAll(data) {
-	  for (var i = 0, n = data.length; i < n; ++i) this.remove(data[i]);
-
-	  return this;
-	}
-
-	function tree_root () {
-	  return this._root;
-	}
-
-	function tree_size () {
-	  var size = 0;
-	  this.visit(function (node) {
-	    if (!node.length) do ++size; while (node = node.next);
-	  });
-	  return size;
-	}
-
-	function tree_visit (callback) {
-	  var quads = [],
-	      q,
-	      node = this._root,
-	      child,
-	      x0,
-	      y0,
-	      x1,
-	      y1;
-	  if (node) quads.push(new Quad(node, this._x0, this._y0, this._x1, this._y1));
-
-	  while (q = quads.pop()) {
-	    if (!callback(node = q.node, x0 = q.x0, y0 = q.y0, x1 = q.x1, y1 = q.y1) && node.length) {
-	      var xm = (x0 + x1) / 2,
-	          ym = (y0 + y1) / 2;
-	      if (child = node[3]) quads.push(new Quad(child, xm, ym, x1, y1));
-	      if (child = node[2]) quads.push(new Quad(child, x0, ym, xm, y1));
-	      if (child = node[1]) quads.push(new Quad(child, xm, y0, x1, ym));
-	      if (child = node[0]) quads.push(new Quad(child, x0, y0, xm, ym));
-	    }
-	  }
-
-	  return this;
-	}
-
-	function tree_visitAfter (callback) {
-	  var quads = [],
-	      next = [],
-	      q;
-	  if (this._root) quads.push(new Quad(this._root, this._x0, this._y0, this._x1, this._y1));
-
-	  while (q = quads.pop()) {
-	    var node = q.node;
-
-	    if (node.length) {
-	      var child,
-	          x0 = q.x0,
-	          y0 = q.y0,
-	          x1 = q.x1,
-	          y1 = q.y1,
-	          xm = (x0 + x1) / 2,
-	          ym = (y0 + y1) / 2;
-	      if (child = node[0]) quads.push(new Quad(child, x0, y0, xm, ym));
-	      if (child = node[1]) quads.push(new Quad(child, xm, y0, x1, ym));
-	      if (child = node[2]) quads.push(new Quad(child, x0, ym, xm, y1));
-	      if (child = node[3]) quads.push(new Quad(child, xm, ym, x1, y1));
-	    }
-
-	    next.push(q);
-	  }
-
-	  while (q = next.pop()) {
-	    callback(q.node, q.x0, q.y0, q.x1, q.y1);
-	  }
-
-	  return this;
-	}
-
-	function defaultX(d) {
-	  return d[0];
-	}
-	function tree_x (_) {
-	  return arguments.length ? (this._x = _, this) : this._x;
-	}
-
-	function defaultY(d) {
-	  return d[1];
-	}
-	function tree_y (_) {
-	  return arguments.length ? (this._y = _, this) : this._y;
-	}
-
-	function quadtree(nodes, x, y) {
-	  var tree = new Quadtree(x == null ? defaultX : x, y == null ? defaultY : y, NaN, NaN, NaN, NaN);
-	  return nodes == null ? tree : tree.addAll(nodes);
-	}
-
-	function Quadtree(x, y, x0, y0, x1, y1) {
-	  this._x = x;
-	  this._y = y;
-	  this._x0 = x0;
-	  this._y0 = y0;
-	  this._x1 = x1;
-	  this._y1 = y1;
-	  this._root = undefined;
-	}
-
-	function leaf_copy(leaf) {
-	  var copy = {
-	    data: leaf.data
-	  },
-	      next = copy;
-
-	  while (leaf = leaf.next) next = next.next = {
-	    data: leaf.data
-	  };
-
-	  return copy;
-	}
-
-	var treeProto = quadtree.prototype = Quadtree.prototype;
-
-	treeProto.copy = function () {
-	  var copy = new Quadtree(this._x, this._y, this._x0, this._y0, this._x1, this._y1),
-	      node = this._root,
-	      nodes,
-	      child;
-	  if (!node) return copy;
-	  if (!node.length) return copy._root = leaf_copy(node), copy;
-	  nodes = [{
-	    source: node,
-	    target: copy._root = new Array(4)
-	  }];
-
-	  while (node = nodes.pop()) {
-	    for (var i = 0; i < 4; ++i) {
-	      if (child = node.source[i]) {
-	        if (child.length) nodes.push({
-	          source: child,
-	          target: node.target[i] = new Array(4)
-	        });else node.target[i] = leaf_copy(child);
-	      }
-	    }
-	  }
-
-	  return copy;
-	};
-
-	treeProto.add = tree_add;
-	treeProto.addAll = addAll;
-	treeProto.cover = tree_cover;
-	treeProto.data = tree_data;
-	treeProto.extent = tree_extent;
-	treeProto.find = tree_find;
-	treeProto.remove = tree_remove;
-	treeProto.removeAll = removeAll;
-	treeProto.root = tree_root;
-	treeProto.size = tree_size;
-	treeProto.visit = tree_visit;
-	treeProto.visitAfter = tree_visitAfter;
-	treeProto.x = tree_x;
-	treeProto.y = tree_y;
-
-	function constant$2 (x) {
-	  return function () {
-	    return x;
-	  };
-	}
-
-	function jiggle (random) {
-	  return (random() - 0.5) * 1e-6;
-	}
-
-	function index$1(d) {
-	  return d.index;
-	}
-
-	function find(nodeById, nodeId) {
-	  var node = nodeById.get(nodeId);
-	  if (!node) throw new Error("node not found: " + nodeId);
-	  return node;
-	}
-
-	function forceLink (links) {
-	  var id = index$1,
-	      strength = defaultStrength,
-	      strengths,
-	      distance = constant$2(30),
-	      distances,
-	      nodes,
-	      count,
-	      bias,
-	      random,
-	      iterations = 1;
-	  if (links == null) links = [];
-
-	  function defaultStrength(link) {
-	    return 1 / Math.min(count[link.source.index], count[link.target.index]);
-	  }
-
-	  function force(alpha) {
-	    for (var k = 0, n = links.length; k < iterations; ++k) {
-	      for (var i = 0, link, source, target, x, y, l, b; i < n; ++i) {
-	        link = links[i], source = link.source, target = link.target;
-	        x = target.x + target.vx - source.x - source.vx || jiggle(random);
-	        y = target.y + target.vy - source.y - source.vy || jiggle(random);
-	        l = Math.sqrt(x * x + y * y);
-	        l = (l - distances[i]) / l * alpha * strengths[i];
-	        x *= l, y *= l;
-	        target.vx -= x * (b = bias[i]);
-	        target.vy -= y * b;
-	        source.vx += x * (b = 1 - b);
-	        source.vy += y * b;
-	      }
-	    }
-	  }
-
-	  function initialize() {
-	    if (!nodes) return;
-	    var i,
-	        n = nodes.length,
-	        m = links.length,
-	        nodeById = new Map(nodes.map((d, i) => [id(d, i, nodes), d])),
-	        link;
-
-	    for (i = 0, count = new Array(n); i < m; ++i) {
-	      link = links[i], link.index = i;
-	      if (typeof link.source !== "object") link.source = find(nodeById, link.source);
-	      if (typeof link.target !== "object") link.target = find(nodeById, link.target);
-	      count[link.source.index] = (count[link.source.index] || 0) + 1;
-	      count[link.target.index] = (count[link.target.index] || 0) + 1;
-	    }
-
-	    for (i = 0, bias = new Array(m); i < m; ++i) {
-	      link = links[i], bias[i] = count[link.source.index] / (count[link.source.index] + count[link.target.index]);
-	    }
-
-	    strengths = new Array(m), initializeStrength();
-	    distances = new Array(m), initializeDistance();
-	  }
-
-	  function initializeStrength() {
-	    if (!nodes) return;
-
-	    for (var i = 0, n = links.length; i < n; ++i) {
-	      strengths[i] = +strength(links[i], i, links);
-	    }
-	  }
-
-	  function initializeDistance() {
-	    if (!nodes) return;
-
-	    for (var i = 0, n = links.length; i < n; ++i) {
-	      distances[i] = +distance(links[i], i, links);
-	    }
-	  }
-
-	  force.initialize = function (_nodes, _random) {
-	    nodes = _nodes;
-	    random = _random;
-	    initialize();
-	  };
-
-	  force.links = function (_) {
-	    return arguments.length ? (links = _, initialize(), force) : links;
-	  };
-
-	  force.id = function (_) {
-	    return arguments.length ? (id = _, force) : id;
-	  };
-
-	  force.iterations = function (_) {
-	    return arguments.length ? (iterations = +_, force) : iterations;
-	  };
-
-	  force.strength = function (_) {
-	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$2(+_), initializeStrength(), force) : strength;
-	  };
-
-	  force.distance = function (_) {
-	    return arguments.length ? (distance = typeof _ === "function" ? _ : constant$2(+_), initializeDistance(), force) : distance;
-	  };
-
-	  return force;
-	}
-
-	// https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
-	const a = 1664525;
-	const c$1 = 1013904223;
-	const m = 4294967296; // 2^32
-
-	function lcg () {
-	  let s = 1;
-	  return () => (s = (a * s + c$1) % m) / m;
-	}
-
-	function x$1(d) {
-	  return d.x;
-	}
-	function y$1(d) {
-	  return d.y;
-	}
-	var initialRadius = 10,
-	    initialAngle = Math.PI * (3 - Math.sqrt(5));
-	function forceSimulation (nodes) {
-	  var simulation,
-	      alpha = 1,
-	      alphaMin = 0.001,
-	      alphaDecay = 1 - Math.pow(alphaMin, 1 / 300),
-	      alphaTarget = 0,
-	      velocityDecay = 0.6,
-	      forces = new Map(),
-	      stepper = timer(step),
-	      event = dispatch("tick", "end"),
-	      random = lcg();
-	  if (nodes == null) nodes = [];
-
-	  function step() {
-	    tick();
-	    event.call("tick", simulation);
-
-	    if (alpha < alphaMin) {
-	      stepper.stop();
-	      event.call("end", simulation);
-	    }
-	  }
-
-	  function tick(iterations) {
-	    var i,
-	        n = nodes.length,
-	        node;
-	    if (iterations === undefined) iterations = 1;
-
-	    for (var k = 0; k < iterations; ++k) {
-	      alpha += (alphaTarget - alpha) * alphaDecay;
-	      forces.forEach(function (force) {
-	        force(alpha);
-	      });
-
-	      for (i = 0; i < n; ++i) {
-	        node = nodes[i];
-	        if (node.fx == null) node.x += node.vx *= velocityDecay;else node.x = node.fx, node.vx = 0;
-	        if (node.fy == null) node.y += node.vy *= velocityDecay;else node.y = node.fy, node.vy = 0;
-	      }
-	    }
-
-	    return simulation;
-	  }
-
-	  function initializeNodes() {
-	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-	      node = nodes[i], node.index = i;
-	      if (node.fx != null) node.x = node.fx;
-	      if (node.fy != null) node.y = node.fy;
-
-	      if (isNaN(node.x) || isNaN(node.y)) {
-	        var radius = initialRadius * Math.sqrt(0.5 + i),
-	            angle = i * initialAngle;
-	        node.x = radius * Math.cos(angle);
-	        node.y = radius * Math.sin(angle);
-	      }
-
-	      if (isNaN(node.vx) || isNaN(node.vy)) {
-	        node.vx = node.vy = 0;
-	      }
-	    }
-	  }
-
-	  function initializeForce(force) {
-	    if (force.initialize) force.initialize(nodes, random);
-	    return force;
-	  }
-
-	  initializeNodes();
-	  return simulation = {
-	    tick: tick,
-	    restart: function () {
-	      return stepper.restart(step), simulation;
-	    },
-	    stop: function () {
-	      return stepper.stop(), simulation;
-	    },
-	    nodes: function (_) {
-	      return arguments.length ? (nodes = _, initializeNodes(), forces.forEach(initializeForce), simulation) : nodes;
-	    },
-	    alpha: function (_) {
-	      return arguments.length ? (alpha = +_, simulation) : alpha;
-	    },
-	    alphaMin: function (_) {
-	      return arguments.length ? (alphaMin = +_, simulation) : alphaMin;
-	    },
-	    alphaDecay: function (_) {
-	      return arguments.length ? (alphaDecay = +_, simulation) : +alphaDecay;
-	    },
-	    alphaTarget: function (_) {
-	      return arguments.length ? (alphaTarget = +_, simulation) : alphaTarget;
-	    },
-	    velocityDecay: function (_) {
-	      return arguments.length ? (velocityDecay = 1 - _, simulation) : 1 - velocityDecay;
-	    },
-	    randomSource: function (_) {
-	      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation) : random;
-	    },
-	    force: function (name, _) {
-	      return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
-	    },
-	    find: function (x, y, radius) {
-	      var i = 0,
-	          n = nodes.length,
-	          dx,
-	          dy,
-	          d2,
-	          node,
-	          closest;
-	      if (radius == null) radius = Infinity;else radius *= radius;
-
-	      for (i = 0; i < n; ++i) {
-	        node = nodes[i];
-	        dx = x - node.x;
-	        dy = y - node.y;
-	        d2 = dx * dx + dy * dy;
-	        if (d2 < radius) closest = node, radius = d2;
-	      }
-
-	      return closest;
-	    },
-	    on: function (name, _) {
-	      return arguments.length > 1 ? (event.on(name, _), simulation) : event.on(name);
-	    }
-	  };
-	}
-
-	function forceManyBody () {
-	  var nodes,
-	      node,
-	      random,
-	      alpha,
-	      strength = constant$2(-30),
-	      strengths,
-	      distanceMin2 = 1,
-	      distanceMax2 = Infinity,
-	      theta2 = 0.81;
-
-	  function force(_) {
-	    var i,
-	        n = nodes.length,
-	        tree = quadtree(nodes, x$1, y$1).visitAfter(accumulate);
-
-	    for (alpha = _, i = 0; i < n; ++i) node = nodes[i], tree.visit(apply);
-	  }
-
-	  function initialize() {
-	    if (!nodes) return;
-	    var i,
-	        n = nodes.length,
-	        node;
-	    strengths = new Array(n);
-
-	    for (i = 0; i < n; ++i) node = nodes[i], strengths[node.index] = +strength(node, i, nodes);
-	  }
-
-	  function accumulate(quad) {
-	    var strength = 0,
-	        q,
-	        c,
-	        weight = 0,
-	        x,
-	        y,
-	        i; // For internal nodes, accumulate forces from child quadrants.
-
-	    if (quad.length) {
-	      for (x = y = i = 0; i < 4; ++i) {
-	        if ((q = quad[i]) && (c = Math.abs(q.value))) {
-	          strength += q.value, weight += c, x += c * q.x, y += c * q.y;
-	        }
-	      }
-
-	      quad.x = x / weight;
-	      quad.y = y / weight;
-	    } // For leaf nodes, accumulate forces from coincident quadrants.
-	    else {
-	      q = quad;
-	      q.x = q.data.x;
-	      q.y = q.data.y;
-
-	      do strength += strengths[q.data.index]; while (q = q.next);
-	    }
-
-	    quad.value = strength;
-	  }
-
-	  function apply(quad, x1, _, x2) {
-	    if (!quad.value) return true;
-	    var x = quad.x - node.x,
-	        y = quad.y - node.y,
-	        w = x2 - x1,
-	        l = x * x + y * y; // Apply the Barnes-Hut approximation if possible.
-	    // Limit forces for very close nodes; randomize direction if coincident.
-
-	    if (w * w / theta2 < l) {
-	      if (l < distanceMax2) {
-	        if (x === 0) x = jiggle(random), l += x * x;
-	        if (y === 0) y = jiggle(random), l += y * y;
-	        if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
-	        node.vx += x * quad.value * alpha / l;
-	        node.vy += y * quad.value * alpha / l;
-	      }
-
-	      return true;
-	    } // Otherwise, process points directly.
-	    else if (quad.length || l >= distanceMax2) return; // Limit forces for very close nodes; randomize direction if coincident.
-
-
-	    if (quad.data !== node || quad.next) {
-	      if (x === 0) x = jiggle(random), l += x * x;
-	      if (y === 0) y = jiggle(random), l += y * y;
-	      if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
-	    }
-
-	    do if (quad.data !== node) {
-	      w = strengths[quad.data.index] * alpha / l;
-	      node.vx += x * w;
-	      node.vy += y * w;
-	    } while (quad = quad.next);
-	  }
-
-	  force.initialize = function (_nodes, _random) {
-	    nodes = _nodes;
-	    random = _random;
-	    initialize();
-	  };
-
-	  force.strength = function (_) {
-	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$2(+_), initialize(), force) : strength;
-	  };
-
-	  force.distanceMin = function (_) {
-	    return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
-	  };
-
-	  force.distanceMax = function (_) {
-	    return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
-	  };
-
-	  force.theta = function (_) {
-	    return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
-	  };
-
-	  return force;
-	}
-
-	function forceX (x) {
-	  var strength = constant$2(0.1),
-	      nodes,
-	      strengths,
-	      xz;
-	  if (typeof x !== "function") x = constant$2(x == null ? 0 : +x);
-
-	  function force(alpha) {
-	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-	      node = nodes[i], node.vx += (xz[i] - node.x) * strengths[i] * alpha;
-	    }
-	  }
-
-	  function initialize() {
-	    if (!nodes) return;
-	    var i,
-	        n = nodes.length;
-	    strengths = new Array(n);
-	    xz = new Array(n);
-
-	    for (i = 0; i < n; ++i) {
-	      strengths[i] = isNaN(xz[i] = +x(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-	    }
-	  }
-
-	  force.initialize = function (_) {
-	    nodes = _;
-	    initialize();
-	  };
-
-	  force.strength = function (_) {
-	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$2(+_), initialize(), force) : strength;
-	  };
-
-	  force.x = function (_) {
-	    return arguments.length ? (x = typeof _ === "function" ? _ : constant$2(+_), initialize(), force) : x;
-	  };
-
-	  return force;
-	}
-
-	function forceY (y) {
-	  var strength = constant$2(0.1),
-	      nodes,
-	      strengths,
-	      yz;
-	  if (typeof y !== "function") y = constant$2(y == null ? 0 : +y);
-
-	  function force(alpha) {
-	    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-	      node = nodes[i], node.vy += (yz[i] - node.y) * strengths[i] * alpha;
-	    }
-	  }
-
-	  function initialize() {
-	    if (!nodes) return;
-	    var i,
-	        n = nodes.length;
-	    strengths = new Array(n);
-	    yz = new Array(n);
-
-	    for (i = 0; i < n; ++i) {
-	      strengths[i] = isNaN(yz[i] = +y(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-	    }
-	  }
-
-	  force.initialize = function (_) {
-	    nodes = _;
-	    initialize();
-	  };
-
-	  force.strength = function (_) {
-	    return arguments.length ? (strength = typeof _ === "function" ? _ : constant$2(+_), initialize(), force) : strength;
-	  };
-
-	  force.y = function (_) {
-	    return arguments.length ? (y = typeof _ === "function" ? _ : constant$2(+_), initialize(), force) : y;
-	  };
-
-	  return force;
-	}
-
 	function formatDecimal (x) {
 	  return Math.abs(x = Math.round(x)) >= 1e21 ? x.toLocaleString("en").replace(/,/g, "") : x.toString(10);
 	} // Computes the decimal coefficient and exponent of the specified number x with
@@ -6533,1042 +8431,6 @@
 	function precisionRound (step, max) {
 	  step = Math.abs(step), max = Math.abs(max) - step;
 	  return Math.max(0, exponent(max) - exponent(step)) + 1;
-	}
-
-	function count(node) {
-	  var sum = 0,
-	      children = node.children,
-	      i = children && children.length;
-	  if (!i) sum = 1;else while (--i >= 0) sum += children[i].value;
-	  node.value = sum;
-	}
-
-	function node_count () {
-	  return this.eachAfter(count);
-	}
-
-	function node_each (callback, that) {
-	  let index = -1;
-
-	  for (const node of this) {
-	    callback.call(that, node, ++index, this);
-	  }
-
-	  return this;
-	}
-
-	function node_eachBefore (callback, that) {
-	  var node = this,
-	      nodes = [node],
-	      children,
-	      i,
-	      index = -1;
-
-	  while (node = nodes.pop()) {
-	    callback.call(that, node, ++index, this);
-
-	    if (children = node.children) {
-	      for (i = children.length - 1; i >= 0; --i) {
-	        nodes.push(children[i]);
-	      }
-	    }
-	  }
-
-	  return this;
-	}
-
-	function node_eachAfter (callback, that) {
-	  var node = this,
-	      nodes = [node],
-	      next = [],
-	      children,
-	      i,
-	      n,
-	      index = -1;
-
-	  while (node = nodes.pop()) {
-	    next.push(node);
-
-	    if (children = node.children) {
-	      for (i = 0, n = children.length; i < n; ++i) {
-	        nodes.push(children[i]);
-	      }
-	    }
-	  }
-
-	  while (node = next.pop()) {
-	    callback.call(that, node, ++index, this);
-	  }
-
-	  return this;
-	}
-
-	function node_find (callback, that) {
-	  let index = -1;
-
-	  for (const node of this) {
-	    if (callback.call(that, node, ++index, this)) {
-	      return node;
-	    }
-	  }
-	}
-
-	function node_sum (value) {
-	  return this.eachAfter(function (node) {
-	    var sum = +value(node.data) || 0,
-	        children = node.children,
-	        i = children && children.length;
-
-	    while (--i >= 0) sum += children[i].value;
-
-	    node.value = sum;
-	  });
-	}
-
-	function node_sort (compare) {
-	  return this.eachBefore(function (node) {
-	    if (node.children) {
-	      node.children.sort(compare);
-	    }
-	  });
-	}
-
-	function node_path (end) {
-	  var start = this,
-	      ancestor = leastCommonAncestor(start, end),
-	      nodes = [start];
-
-	  while (start !== ancestor) {
-	    start = start.parent;
-	    nodes.push(start);
-	  }
-
-	  var k = nodes.length;
-
-	  while (end !== ancestor) {
-	    nodes.splice(k, 0, end);
-	    end = end.parent;
-	  }
-
-	  return nodes;
-	}
-
-	function leastCommonAncestor(a, b) {
-	  if (a === b) return a;
-	  var aNodes = a.ancestors(),
-	      bNodes = b.ancestors(),
-	      c = null;
-	  a = aNodes.pop();
-	  b = bNodes.pop();
-
-	  while (a === b) {
-	    c = a;
-	    a = aNodes.pop();
-	    b = bNodes.pop();
-	  }
-
-	  return c;
-	}
-
-	function node_ancestors () {
-	  var node = this,
-	      nodes = [node];
-
-	  while (node = node.parent) {
-	    nodes.push(node);
-	  }
-
-	  return nodes;
-	}
-
-	function node_descendants () {
-	  return Array.from(this);
-	}
-
-	function node_leaves () {
-	  var leaves = [];
-	  this.eachBefore(function (node) {
-	    if (!node.children) {
-	      leaves.push(node);
-	    }
-	  });
-	  return leaves;
-	}
-
-	function node_links () {
-	  var root = this,
-	      links = [];
-	  root.each(function (node) {
-	    if (node !== root) {
-	      // Don’t include the root’s parent, if any.
-	      links.push({
-	        source: node.parent,
-	        target: node
-	      });
-	    }
-	  });
-	  return links;
-	}
-
-	function* node_iterator () {
-	  var node = this,
-	      current,
-	      next = [node],
-	      children,
-	      i,
-	      n;
-
-	  do {
-	    current = next.reverse(), next = [];
-
-	    while (node = current.pop()) {
-	      yield node;
-
-	      if (children = node.children) {
-	        for (i = 0, n = children.length; i < n; ++i) {
-	          next.push(children[i]);
-	        }
-	      }
-	    }
-	  } while (next.length);
-	}
-
-	function hierarchy(data, children) {
-	  if (data instanceof Map) {
-	    data = [undefined, data];
-	    if (children === undefined) children = mapChildren;
-	  } else if (children === undefined) {
-	    children = objectChildren;
-	  }
-
-	  var root = new Node$1(data),
-	      node,
-	      nodes = [root],
-	      child,
-	      childs,
-	      i,
-	      n;
-
-	  while (node = nodes.pop()) {
-	    if ((childs = children(node.data)) && (n = (childs = Array.from(childs)).length)) {
-	      node.children = childs;
-
-	      for (i = n - 1; i >= 0; --i) {
-	        nodes.push(child = childs[i] = new Node$1(childs[i]));
-	        child.parent = node;
-	        child.depth = node.depth + 1;
-	      }
-	    }
-	  }
-
-	  return root.eachBefore(computeHeight);
-	}
-
-	function node_copy() {
-	  return hierarchy(this).eachBefore(copyData);
-	}
-
-	function objectChildren(d) {
-	  return d.children;
-	}
-
-	function mapChildren(d) {
-	  return Array.isArray(d) ? d[1] : null;
-	}
-
-	function copyData(node) {
-	  if (node.data.value !== undefined) node.value = node.data.value;
-	  node.data = node.data.data;
-	}
-
-	function computeHeight(node) {
-	  var height = 0;
-
-	  do node.height = height; while ((node = node.parent) && node.height < ++height);
-	}
-	function Node$1(data) {
-	  this.data = data;
-	  this.depth = this.height = 0;
-	  this.parent = null;
-	}
-	Node$1.prototype = hierarchy.prototype = {
-	  constructor: Node$1,
-	  count: node_count,
-	  each: node_each,
-	  eachAfter: node_eachAfter,
-	  eachBefore: node_eachBefore,
-	  find: node_find,
-	  sum: node_sum,
-	  sort: node_sort,
-	  path: node_path,
-	  ancestors: node_ancestors,
-	  descendants: node_descendants,
-	  leaves: node_leaves,
-	  links: node_links,
-	  copy: node_copy,
-	  [Symbol.iterator]: node_iterator
-	};
-
-	function array (x) {
-	  return typeof x === "object" && "length" in x ? x // Array, TypedArray, NodeList, array-like
-	  : Array.from(x); // Map, Set, iterable, string, or anything else
-	}
-	function shuffle(array) {
-	  var m = array.length,
-	      t,
-	      i;
-
-	  while (m) {
-	    i = Math.random() * m-- | 0;
-	    t = array[m];
-	    array[m] = array[i];
-	    array[i] = t;
-	  }
-
-	  return array;
-	}
-
-	function enclose (circles) {
-	  var i = 0,
-	      n = (circles = shuffle(Array.from(circles))).length,
-	      B = [],
-	      p,
-	      e;
-
-	  while (i < n) {
-	    p = circles[i];
-	    if (e && enclosesWeak(e, p)) ++i;else e = encloseBasis(B = extendBasis(B, p)), i = 0;
-	  }
-
-	  return e;
-	}
-
-	function extendBasis(B, p) {
-	  var i, j;
-	  if (enclosesWeakAll(p, B)) return [p]; // If we get here then B must have at least one element.
-
-	  for (i = 0; i < B.length; ++i) {
-	    if (enclosesNot(p, B[i]) && enclosesWeakAll(encloseBasis2(B[i], p), B)) {
-	      return [B[i], p];
-	    }
-	  } // If we get here then B must have at least two elements.
-
-
-	  for (i = 0; i < B.length - 1; ++i) {
-	    for (j = i + 1; j < B.length; ++j) {
-	      if (enclosesNot(encloseBasis2(B[i], B[j]), p) && enclosesNot(encloseBasis2(B[i], p), B[j]) && enclosesNot(encloseBasis2(B[j], p), B[i]) && enclosesWeakAll(encloseBasis3(B[i], B[j], p), B)) {
-	        return [B[i], B[j], p];
-	      }
-	    }
-	  } // If we get here then something is very wrong.
-
-
-	  throw new Error();
-	}
-
-	function enclosesNot(a, b) {
-	  var dr = a.r - b.r,
-	      dx = b.x - a.x,
-	      dy = b.y - a.y;
-	  return dr < 0 || dr * dr < dx * dx + dy * dy;
-	}
-
-	function enclosesWeak(a, b) {
-	  var dr = a.r - b.r + Math.max(a.r, b.r, 1) * 1e-9,
-	      dx = b.x - a.x,
-	      dy = b.y - a.y;
-	  return dr > 0 && dr * dr > dx * dx + dy * dy;
-	}
-
-	function enclosesWeakAll(a, B) {
-	  for (var i = 0; i < B.length; ++i) {
-	    if (!enclosesWeak(a, B[i])) {
-	      return false;
-	    }
-	  }
-
-	  return true;
-	}
-
-	function encloseBasis(B) {
-	  switch (B.length) {
-	    case 1:
-	      return encloseBasis1(B[0]);
-
-	    case 2:
-	      return encloseBasis2(B[0], B[1]);
-
-	    case 3:
-	      return encloseBasis3(B[0], B[1], B[2]);
-	  }
-	}
-
-	function encloseBasis1(a) {
-	  return {
-	    x: a.x,
-	    y: a.y,
-	    r: a.r
-	  };
-	}
-
-	function encloseBasis2(a, b) {
-	  var x1 = a.x,
-	      y1 = a.y,
-	      r1 = a.r,
-	      x2 = b.x,
-	      y2 = b.y,
-	      r2 = b.r,
-	      x21 = x2 - x1,
-	      y21 = y2 - y1,
-	      r21 = r2 - r1,
-	      l = Math.sqrt(x21 * x21 + y21 * y21);
-	  return {
-	    x: (x1 + x2 + x21 / l * r21) / 2,
-	    y: (y1 + y2 + y21 / l * r21) / 2,
-	    r: (l + r1 + r2) / 2
-	  };
-	}
-
-	function encloseBasis3(a, b, c) {
-	  var x1 = a.x,
-	      y1 = a.y,
-	      r1 = a.r,
-	      x2 = b.x,
-	      y2 = b.y,
-	      r2 = b.r,
-	      x3 = c.x,
-	      y3 = c.y,
-	      r3 = c.r,
-	      a2 = x1 - x2,
-	      a3 = x1 - x3,
-	      b2 = y1 - y2,
-	      b3 = y1 - y3,
-	      c2 = r2 - r1,
-	      c3 = r3 - r1,
-	      d1 = x1 * x1 + y1 * y1 - r1 * r1,
-	      d2 = d1 - x2 * x2 - y2 * y2 + r2 * r2,
-	      d3 = d1 - x3 * x3 - y3 * y3 + r3 * r3,
-	      ab = a3 * b2 - a2 * b3,
-	      xa = (b2 * d3 - b3 * d2) / (ab * 2) - x1,
-	      xb = (b3 * c2 - b2 * c3) / ab,
-	      ya = (a3 * d2 - a2 * d3) / (ab * 2) - y1,
-	      yb = (a2 * c3 - a3 * c2) / ab,
-	      A = xb * xb + yb * yb - 1,
-	      B = 2 * (r1 + xa * xb + ya * yb),
-	      C = xa * xa + ya * ya - r1 * r1,
-	      r = -(A ? (B + Math.sqrt(B * B - 4 * A * C)) / (2 * A) : C / B);
-	  return {
-	    x: x1 + xa + xb * r,
-	    y: y1 + ya + yb * r,
-	    r: r
-	  };
-	}
-
-	function place(b, a, c) {
-	  var dx = b.x - a.x,
-	      x,
-	      a2,
-	      dy = b.y - a.y,
-	      y,
-	      b2,
-	      d2 = dx * dx + dy * dy;
-
-	  if (d2) {
-	    a2 = a.r + c.r, a2 *= a2;
-	    b2 = b.r + c.r, b2 *= b2;
-
-	    if (a2 > b2) {
-	      x = (d2 + b2 - a2) / (2 * d2);
-	      y = Math.sqrt(Math.max(0, b2 / d2 - x * x));
-	      c.x = b.x - x * dx - y * dy;
-	      c.y = b.y - x * dy + y * dx;
-	    } else {
-	      x = (d2 + a2 - b2) / (2 * d2);
-	      y = Math.sqrt(Math.max(0, a2 / d2 - x * x));
-	      c.x = a.x + x * dx - y * dy;
-	      c.y = a.y + x * dy + y * dx;
-	    }
-	  } else {
-	    c.x = a.x + c.r;
-	    c.y = a.y;
-	  }
-	}
-
-	function intersects(a, b) {
-	  var dr = a.r + b.r - 1e-6,
-	      dx = b.x - a.x,
-	      dy = b.y - a.y;
-	  return dr > 0 && dr * dr > dx * dx + dy * dy;
-	}
-
-	function score(node) {
-	  var a = node._,
-	      b = node.next._,
-	      ab = a.r + b.r,
-	      dx = (a.x * b.r + b.x * a.r) / ab,
-	      dy = (a.y * b.r + b.y * a.r) / ab;
-	  return dx * dx + dy * dy;
-	}
-
-	function Node(circle) {
-	  this._ = circle;
-	  this.next = null;
-	  this.previous = null;
-	}
-
-	function packEnclose(circles) {
-	  if (!(n = (circles = array(circles)).length)) return 0;
-	  var a, b, c, n, aa, ca, i, j, k, sj, sk; // Place the first circle.
-
-	  a = circles[0], a.x = 0, a.y = 0;
-	  if (!(n > 1)) return a.r; // Place the second circle.
-
-	  b = circles[1], a.x = -b.r, b.x = a.r, b.y = 0;
-	  if (!(n > 2)) return a.r + b.r; // Place the third circle.
-
-	  place(b, a, c = circles[2]); // Initialize the front-chain using the first three circles a, b and c.
-
-	  a = new Node(a), b = new Node(b), c = new Node(c);
-	  a.next = c.previous = b;
-	  b.next = a.previous = c;
-	  c.next = b.previous = a; // Attempt to place each remaining circle…
-
-	  pack: for (i = 3; i < n; ++i) {
-	    place(a._, b._, c = circles[i]), c = new Node(c); // Find the closest intersecting circle on the front-chain, if any.
-	    // “Closeness” is determined by linear distance along the front-chain.
-	    // “Ahead” or “behind” is likewise determined by linear distance.
-
-	    j = b.next, k = a.previous, sj = b._.r, sk = a._.r;
-
-	    do {
-	      if (sj <= sk) {
-	        if (intersects(j._, c._)) {
-	          b = j, a.next = b, b.previous = a, --i;
-	          continue pack;
-	        }
-
-	        sj += j._.r, j = j.next;
-	      } else {
-	        if (intersects(k._, c._)) {
-	          a = k, a.next = b, b.previous = a, --i;
-	          continue pack;
-	        }
-
-	        sk += k._.r, k = k.previous;
-	      }
-	    } while (j !== k.next); // Success! Insert the new circle c between a and b.
-
-
-	    c.previous = a, c.next = b, a.next = b.previous = b = c; // Compute the new closest circle pair to the centroid.
-
-	    aa = score(a);
-
-	    while ((c = c.next) !== b) {
-	      if ((ca = score(c)) < aa) {
-	        a = c, aa = ca;
-	      }
-	    }
-
-	    b = a.next;
-	  } // Compute the enclosing circle of the front chain.
-
-
-	  a = [b._], c = b;
-
-	  while ((c = c.next) !== b) a.push(c._);
-
-	  c = enclose(a); // Translate the circles to put the enclosing circle around the origin.
-
-	  for (i = 0; i < n; ++i) a = circles[i], a.x -= c.x, a.y -= c.y;
-
-	  return c.r;
-	}
-
-	function optional(f) {
-	  return f == null ? null : required(f);
-	}
-	function required(f) {
-	  if (typeof f !== "function") throw new Error();
-	  return f;
-	}
-
-	function constantZero() {
-	  return 0;
-	}
-	function constant$1 (x) {
-	  return function () {
-	    return x;
-	  };
-	}
-
-	function defaultRadius(d) {
-	  return Math.sqrt(d.value);
-	}
-
-	function index () {
-	  var radius = null,
-	      dx = 1,
-	      dy = 1,
-	      padding = constantZero;
-
-	  function pack(root) {
-	    root.x = dx / 2, root.y = dy / 2;
-
-	    if (radius) {
-	      root.eachBefore(radiusLeaf(radius)).eachAfter(packChildren(padding, 0.5)).eachBefore(translateChild(1));
-	    } else {
-	      root.eachBefore(radiusLeaf(defaultRadius)).eachAfter(packChildren(constantZero, 1)).eachAfter(packChildren(padding, root.r / Math.min(dx, dy))).eachBefore(translateChild(Math.min(dx, dy) / (2 * root.r)));
-	    }
-
-	    return root;
-	  }
-
-	  pack.radius = function (x) {
-	    return arguments.length ? (radius = optional(x), pack) : radius;
-	  };
-
-	  pack.size = function (x) {
-	    return arguments.length ? (dx = +x[0], dy = +x[1], pack) : [dx, dy];
-	  };
-
-	  pack.padding = function (x) {
-	    return arguments.length ? (padding = typeof x === "function" ? x : constant$1(+x), pack) : padding;
-	  };
-
-	  return pack;
-	}
-
-	function radiusLeaf(radius) {
-	  return function (node) {
-	    if (!node.children) {
-	      node.r = Math.max(0, +radius(node) || 0);
-	    }
-	  };
-	}
-
-	function packChildren(padding, k) {
-	  return function (node) {
-	    if (children = node.children) {
-	      var children,
-	          i,
-	          n = children.length,
-	          r = padding(node) * k || 0,
-	          e;
-	      if (r) for (i = 0; i < n; ++i) children[i].r += r;
-	      e = packEnclose(children);
-	      if (r) for (i = 0; i < n; ++i) children[i].r -= r;
-	      node.r = e + r;
-	    }
-	  };
-	}
-
-	function translateChild(k) {
-	  return function (node) {
-	    var parent = node.parent;
-	    node.r *= k;
-
-	    if (parent) {
-	      node.x = parent.x + k * node.x;
-	      node.y = parent.y + k * node.y;
-	    }
-	  };
-	}
-
-	function roundNode (node) {
-	  node.x0 = Math.round(node.x0);
-	  node.y0 = Math.round(node.y0);
-	  node.x1 = Math.round(node.x1);
-	  node.y1 = Math.round(node.y1);
-	}
-
-	function treemapDice (parent, x0, y0, x1, y1) {
-	  var nodes = parent.children,
-	      node,
-	      i = -1,
-	      n = nodes.length,
-	      k = parent.value && (x1 - x0) / parent.value;
-
-	  while (++i < n) {
-	    node = nodes[i], node.y0 = y0, node.y1 = y1;
-	    node.x0 = x0, node.x1 = x0 += node.value * k;
-	  }
-	}
-
-	function partition () {
-	  var dx = 1,
-	      dy = 1,
-	      padding = 0,
-	      round = false;
-
-	  function partition(root) {
-	    var n = root.height + 1;
-	    root.x0 = root.y0 = padding;
-	    root.x1 = dx;
-	    root.y1 = dy / n;
-	    root.eachBefore(positionNode(dy, n));
-	    if (round) root.eachBefore(roundNode);
-	    return root;
-	  }
-
-	  function positionNode(dy, n) {
-	    return function (node) {
-	      if (node.children) {
-	        treemapDice(node, node.x0, dy * (node.depth + 1) / n, node.x1, dy * (node.depth + 2) / n);
-	      }
-
-	      var x0 = node.x0,
-	          y0 = node.y0,
-	          x1 = node.x1 - padding,
-	          y1 = node.y1 - padding;
-	      if (x1 < x0) x0 = x1 = (x0 + x1) / 2;
-	      if (y1 < y0) y0 = y1 = (y0 + y1) / 2;
-	      node.x0 = x0;
-	      node.y0 = y0;
-	      node.x1 = x1;
-	      node.y1 = y1;
-	    };
-	  }
-
-	  partition.round = function (x) {
-	    return arguments.length ? (round = !!x, partition) : round;
-	  };
-
-	  partition.size = function (x) {
-	    return arguments.length ? (dx = +x[0], dy = +x[1], partition) : [dx, dy];
-	  };
-
-	  partition.padding = function (x) {
-	    return arguments.length ? (padding = +x, partition) : padding;
-	  };
-
-	  return partition;
-	}
-
-	var preroot = {
-	  depth: -1
-	},
-	    ambiguous = {};
-
-	function defaultId(d) {
-	  return d.id;
-	}
-
-	function defaultParentId(d) {
-	  return d.parentId;
-	}
-
-	function stratify () {
-	  var id = defaultId,
-	      parentId = defaultParentId;
-
-	  function stratify(data) {
-	    var nodes = Array.from(data),
-	        n = nodes.length,
-	        d,
-	        i,
-	        root,
-	        parent,
-	        node,
-	        nodeId,
-	        nodeKey,
-	        nodeByKey = new Map();
-
-	    for (i = 0; i < n; ++i) {
-	      d = nodes[i], node = nodes[i] = new Node$1(d);
-
-	      if ((nodeId = id(d, i, data)) != null && (nodeId += "")) {
-	        nodeKey = node.id = nodeId;
-	        nodeByKey.set(nodeKey, nodeByKey.has(nodeKey) ? ambiguous : node);
-	      }
-
-	      if ((nodeId = parentId(d, i, data)) != null && (nodeId += "")) {
-	        node.parent = nodeId;
-	      }
-	    }
-
-	    for (i = 0; i < n; ++i) {
-	      node = nodes[i];
-
-	      if (nodeId = node.parent) {
-	        parent = nodeByKey.get(nodeId);
-	        if (!parent) throw new Error("missing: " + nodeId);
-	        if (parent === ambiguous) throw new Error("ambiguous: " + nodeId);
-	        if (parent.children) parent.children.push(node);else parent.children = [node];
-	        node.parent = parent;
-	      } else {
-	        if (root) throw new Error("multiple roots");
-	        root = node;
-	      }
-	    }
-
-	    if (!root) throw new Error("no root");
-	    root.parent = preroot;
-	    root.eachBefore(function (node) {
-	      node.depth = node.parent.depth + 1;
-	      --n;
-	    }).eachBefore(computeHeight);
-	    root.parent = null;
-	    if (n > 0) throw new Error("cycle");
-	    return root;
-	  }
-
-	  stratify.id = function (x) {
-	    return arguments.length ? (id = required(x), stratify) : id;
-	  };
-
-	  stratify.parentId = function (x) {
-	    return arguments.length ? (parentId = required(x), stratify) : parentId;
-	  };
-
-	  return stratify;
-	}
-
-	function defaultSeparation(a, b) {
-	  return a.parent === b.parent ? 1 : 2;
-	} // function radialSeparation(a, b) {
-	//   return (a.parent === b.parent ? 1 : 2) / a.depth;
-	// }
-	// This function is used to traverse the left contour of a subtree (or
-	// subforest). It returns the successor of v on this contour. This successor is
-	// either given by the leftmost child of v or by the thread of v. The function
-	// returns null if and only if v is on the highest level of its subtree.
-
-
-	function nextLeft(v) {
-	  var children = v.children;
-	  return children ? children[0] : v.t;
-	} // This function works analogously to nextLeft.
-
-
-	function nextRight(v) {
-	  var children = v.children;
-	  return children ? children[children.length - 1] : v.t;
-	} // Shifts the current subtree rooted at w+. This is done by increasing
-	// prelim(w+) and mod(w+) by shift.
-
-
-	function moveSubtree(wm, wp, shift) {
-	  var change = shift / (wp.i - wm.i);
-	  wp.c -= change;
-	  wp.s += shift;
-	  wm.c += change;
-	  wp.z += shift;
-	  wp.m += shift;
-	} // All other shifts, applied to the smaller subtrees between w- and w+, are
-	// performed by this function. To prepare the shifts, we have to adjust
-	// change(w+), shift(w+), and change(w-).
-
-
-	function executeShifts(v) {
-	  var shift = 0,
-	      change = 0,
-	      children = v.children,
-	      i = children.length,
-	      w;
-
-	  while (--i >= 0) {
-	    w = children[i];
-	    w.z += shift;
-	    w.m += shift;
-	    shift += w.s + (change += w.c);
-	  }
-	} // If vi-’s ancestor is a sibling of v, returns vi-’s ancestor. Otherwise,
-	// returns the specified (default) ancestor.
-
-
-	function nextAncestor(vim, v, ancestor) {
-	  return vim.a.parent === v.parent ? vim.a : ancestor;
-	}
-
-	function TreeNode(node, i) {
-	  this._ = node;
-	  this.parent = null;
-	  this.children = null;
-	  this.A = null; // default ancestor
-
-	  this.a = this; // ancestor
-
-	  this.z = 0; // prelim
-
-	  this.m = 0; // mod
-
-	  this.c = 0; // change
-
-	  this.s = 0; // shift
-
-	  this.t = null; // thread
-
-	  this.i = i; // number
-	}
-
-	TreeNode.prototype = Object.create(Node$1.prototype);
-
-	function treeRoot(root) {
-	  var tree = new TreeNode(root, 0),
-	      node,
-	      nodes = [tree],
-	      child,
-	      children,
-	      i,
-	      n;
-
-	  while (node = nodes.pop()) {
-	    if (children = node._.children) {
-	      node.children = new Array(n = children.length);
-
-	      for (i = n - 1; i >= 0; --i) {
-	        nodes.push(child = node.children[i] = new TreeNode(children[i], i));
-	        child.parent = node;
-	      }
-	    }
-	  }
-
-	  (tree.parent = new TreeNode(null, 0)).children = [tree];
-	  return tree;
-	} // Node-link tree diagram using the Reingold-Tilford "tidy" algorithm
-
-
-	function tree () {
-	  var separation = defaultSeparation,
-	      dx = 1,
-	      dy = 1,
-	      nodeSize = null;
-
-	  function tree(root) {
-	    var t = treeRoot(root); // Compute the layout using Buchheim et al.’s algorithm.
-
-	    t.eachAfter(firstWalk), t.parent.m = -t.z;
-	    t.eachBefore(secondWalk); // If a fixed node size is specified, scale x and y.
-
-	    if (nodeSize) root.eachBefore(sizeNode); // If a fixed tree size is specified, scale x and y based on the extent.
-	    // Compute the left-most, right-most, and depth-most nodes for extents.
-	    else {
-	      var left = root,
-	          right = root,
-	          bottom = root;
-	      root.eachBefore(function (node) {
-	        if (node.x < left.x) left = node;
-	        if (node.x > right.x) right = node;
-	        if (node.depth > bottom.depth) bottom = node;
-	      });
-	      var s = left === right ? 1 : separation(left, right) / 2,
-	          tx = s - left.x,
-	          kx = dx / (right.x + s + tx),
-	          ky = dy / (bottom.depth || 1);
-	      root.eachBefore(function (node) {
-	        node.x = (node.x + tx) * kx;
-	        node.y = node.depth * ky;
-	      });
-	    }
-	    return root;
-	  } // Computes a preliminary x-coordinate for v. Before that, FIRST WALK is
-	  // applied recursively to the children of v, as well as the function
-	  // APPORTION. After spacing out the children by calling EXECUTE SHIFTS, the
-	  // node v is placed to the midpoint of its outermost children.
-
-
-	  function firstWalk(v) {
-	    var children = v.children,
-	        siblings = v.parent.children,
-	        w = v.i ? siblings[v.i - 1] : null;
-
-	    if (children) {
-	      executeShifts(v);
-	      var midpoint = (children[0].z + children[children.length - 1].z) / 2;
-
-	      if (w) {
-	        v.z = w.z + separation(v._, w._);
-	        v.m = v.z - midpoint;
-	      } else {
-	        v.z = midpoint;
-	      }
-	    } else if (w) {
-	      v.z = w.z + separation(v._, w._);
-	    }
-
-	    v.parent.A = apportion(v, w, v.parent.A || siblings[0]);
-	  } // Computes all real x-coordinates by summing up the modifiers recursively.
-
-
-	  function secondWalk(v) {
-	    v._.x = v.z + v.parent.m;
-	    v.m += v.parent.m;
-	  } // The core of the algorithm. Here, a new subtree is combined with the
-	  // previous subtrees. Threads are used to traverse the inside and outside
-	  // contours of the left and right subtree up to the highest common level. The
-	  // vertices used for the traversals are vi+, vi-, vo-, and vo+, where the
-	  // superscript o means outside and i means inside, the subscript - means left
-	  // subtree and + means right subtree. For summing up the modifiers along the
-	  // contour, we use respective variables si+, si-, so-, and so+. Whenever two
-	  // nodes of the inside contours conflict, we compute the left one of the
-	  // greatest uncommon ancestors using the function ANCESTOR and call MOVE
-	  // SUBTREE to shift the subtree and prepare the shifts of smaller subtrees.
-	  // Finally, we add a new thread (if necessary).
-
-
-	  function apportion(v, w, ancestor) {
-	    if (w) {
-	      var vip = v,
-	          vop = v,
-	          vim = w,
-	          vom = vip.parent.children[0],
-	          sip = vip.m,
-	          sop = vop.m,
-	          sim = vim.m,
-	          som = vom.m,
-	          shift;
-
-	      while (vim = nextRight(vim), vip = nextLeft(vip), vim && vip) {
-	        vom = nextLeft(vom);
-	        vop = nextRight(vop);
-	        vop.a = v;
-	        shift = vim.z + sim - vip.z - sip + separation(vim._, vip._);
-
-	        if (shift > 0) {
-	          moveSubtree(nextAncestor(vim, v, ancestor), v, shift);
-	          sip += shift;
-	          sop += shift;
-	        }
-
-	        sim += vim.m;
-	        sip += vip.m;
-	        som += vom.m;
-	        sop += vop.m;
-	      }
-
-	      if (vim && !nextRight(vop)) {
-	        vop.t = vim;
-	        vop.m += sim - sop;
-	      }
-
-	      if (vip && !nextLeft(vom)) {
-	        vom.t = vip;
-	        vom.m += sip - som;
-	        ancestor = v;
-	      }
-	    }
-
-	    return ancestor;
-	  }
-
-	  function sizeNode(node) {
-	    node.x *= dx;
-	    node.y = node.depth * dy;
-	  }
-
-	  tree.separation = function (x) {
-	    return arguments.length ? (separation = x, tree) : separation;
-	  };
-
-	  tree.size = function (x) {
-	    return arguments.length ? (nodeSize = false, dx = +x[0], dy = +x[1], tree) : nodeSize ? null : [dx, dy];
-	  };
-
-	  tree.nodeSize = function (x) {
-	    return arguments.length ? (nodeSize = true, dx = +x[0], dy = +x[1], tree) : nodeSize ? [dx, dy] : null;
-	  };
-
-	  return tree;
 	}
 
 	function initRange(domain, range) {
@@ -8168,880 +9030,6 @@
 	  l.angle = l.x, delete l.x;
 	  l.radius = l.y, delete l.y;
 	  return l;
-	}
-
-	var d3 = {
-	  csv: csv,
-	  drag: drag,
-	  forceLink: forceLink,
-	  forceManyBody: forceManyBody,
-	  forceSimulation: forceSimulation,
-	  forceX: forceX,
-	  forceY: forceY,
-	  select: select,
-	  stratify: stratify
-	};
-
-	var forceTree = function forceTree(ecosystem, element) {
-	  var width = 200;
-	  var height = width;
-	  var links = ecosystem.links();
-	  var nodes = ecosystem.descendants();
-	  var simulation = d3.forceSimulation(nodes).force('link', d3.forceLink(links).id(function (d) {
-	    return d.id;
-	  }).distance(0).strength(1)).force('charge', d3.forceManyBody().strength(-50)).force('x', d3.forceX()).force('y', d3.forceY());
-	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
-	  var link = svg.append('g').attr('stroke', '#999').attr('stroke-opacity', 0.6).selectAll('line').data(links).join('line');
-
-	  var drag = function drag(simulation) {
-	    function dragstarted(event, d) {
-	      if (!event.active) simulation.alphaTarget(0.3).restart();
-	      d.fx = d.x;
-	      d.fy = d.y;
-	    }
-
-	    function dragged(event, d) {
-	      d.fx = event.x;
-	      d.fy = event.y;
-	    }
-
-	    function dragended(event, d) {
-	      if (!event.active) simulation.alphaTarget(0);
-	      d.fx = null;
-	      d.fy = null;
-	    }
-
-	    return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
-	  };
-
-	  var tooltip = element.append('div').attr('class', 'tooltip hide');
-
-	  var showTooltip = function showTooltip(entity) {
-	    var _entity$data = entity.data,
-	        id = _entity$data.id,
-	        name = _entity$data.name,
-	        type = _entity$data.type;
-	    var content = "\n      <h1>".concat(name || id, " (").concat(type, ")</h1>\n      <p>").concat(nodePath(entity), "</p>\n    ");
-	    tooltip.classed('hide', false);
-	    tooltip.html(content);
-	  };
-
-	  var hideTooltip = function hideTooltip(entity) {
-	    tooltip.classed('hide', !entity.selected);
-	  };
-
-	  var node = svg.append('g').selectAll('circle').data(nodes).join('circle').attr('class', function (d) {
-	    return d.data.type;
-	  }).attr('r', 3.5).call(drag(simulation)).on('mouseover', function (_, i) {
-	    return showTooltip(i);
-	  }).on('mouseout', function (_, i) {
-	    return hideTooltip(i);
-	  }).on('click', function (_, i) {
-	    node.enter().selected = false;
-	    i.selected = true;
-	  });
-
-	  var nodePath = function nodePath(d) {
-	    return d.ancestors().map(function (d) {
-	      return d.data.id;
-	    }).reverse().join('/');
-	  };
-
-	  node.append('title').text(function (d) {
-	    return nodePath(d);
-	  });
-	  simulation.on('tick', function () {
-	    link.attr('x1', function (d) {
-	      return d.source.x;
-	    }).attr('y1', function (d) {
-	      return d.source.y;
-	    }).attr('x2', function (d) {
-	      return d.target.x;
-	    }).attr('y2', function (d) {
-	      return d.target.y;
-	    });
-	    node.attr('cx', function (d) {
-	      return d.x;
-	    }).attr('cy', function (d) {
-	      return d.y;
-	    });
-	  }); // WAT DIS? invalidation.then(() => simulation.stop());
-
-	  return svg.node();
-	};
-
-	var runtime = {exports: {}};
-
-	/**
-	 * Copyright (c) 2014-present, Facebook, Inc.
-	 *
-	 * This source code is licensed under the MIT license found in the
-	 * LICENSE file in the root directory of this source tree.
-	 */
-
-	(function (module) {
-	  var runtime = function (exports) {
-
-	    var Op = Object.prototype;
-	    var hasOwn = Op.hasOwnProperty;
-	    var undefined$1; // More compressible than void 0.
-
-	    var $Symbol = typeof Symbol === "function" ? Symbol : {};
-	    var iteratorSymbol = $Symbol.iterator || "@@iterator";
-	    var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
-	    var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
-	    function define(obj, key, value) {
-	      Object.defineProperty(obj, key, {
-	        value: value,
-	        enumerable: true,
-	        configurable: true,
-	        writable: true
-	      });
-	      return obj[key];
-	    }
-
-	    try {
-	      // IE 8 has a broken Object.defineProperty that only works on DOM objects.
-	      define({}, "");
-	    } catch (err) {
-	      define = function (obj, key, value) {
-	        return obj[key] = value;
-	      };
-	    }
-
-	    function wrap(innerFn, outerFn, self, tryLocsList) {
-	      // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
-	      var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
-	      var generator = Object.create(protoGenerator.prototype);
-	      var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
-	      // .throw, and .return methods.
-
-	      generator._invoke = makeInvokeMethod(innerFn, self, context);
-	      return generator;
-	    }
-
-	    exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
-	    // record like context.tryEntries[i].completion. This interface could
-	    // have been (and was previously) designed to take a closure to be
-	    // invoked without arguments, but in all the cases we care about we
-	    // already have an existing method we want to call, so there's no need
-	    // to create a new function object. We can even get away with assuming
-	    // the method takes exactly one argument, since that happens to be true
-	    // in every case, so we don't have to touch the arguments object. The
-	    // only additional allocation required is the completion record, which
-	    // has a stable shape and so hopefully should be cheap to allocate.
-
-	    function tryCatch(fn, obj, arg) {
-	      try {
-	        return {
-	          type: "normal",
-	          arg: fn.call(obj, arg)
-	        };
-	      } catch (err) {
-	        return {
-	          type: "throw",
-	          arg: err
-	        };
-	      }
-	    }
-
-	    var GenStateSuspendedStart = "suspendedStart";
-	    var GenStateSuspendedYield = "suspendedYield";
-	    var GenStateExecuting = "executing";
-	    var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
-	    // breaking out of the dispatch switch statement.
-
-	    var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
-	    // .constructor.prototype properties for functions that return Generator
-	    // objects. For full spec compliance, you may wish to configure your
-	    // minifier not to mangle the names of these two functions.
-
-	    function Generator() {}
-
-	    function GeneratorFunction() {}
-
-	    function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
-	    // don't natively support it.
-
-
-	    var IteratorPrototype = {};
-	    define(IteratorPrototype, iteratorSymbol, function () {
-	      return this;
-	    });
-	    var getProto = Object.getPrototypeOf;
-	    var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-
-	    if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
-	      // This environment has a native %IteratorPrototype%; use it instead
-	      // of the polyfill.
-	      IteratorPrototype = NativeIteratorPrototype;
-	    }
-
-	    var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
-	    GeneratorFunction.prototype = GeneratorFunctionPrototype;
-	    define(Gp, "constructor", GeneratorFunctionPrototype);
-	    define(GeneratorFunctionPrototype, "constructor", GeneratorFunction);
-	    GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
-	    // Iterator interface in terms of a single ._invoke method.
-
-	    function defineIteratorMethods(prototype) {
-	      ["next", "throw", "return"].forEach(function (method) {
-	        define(prototype, method, function (arg) {
-	          return this._invoke(method, arg);
-	        });
-	      });
-	    }
-
-	    exports.isGeneratorFunction = function (genFun) {
-	      var ctor = typeof genFun === "function" && genFun.constructor;
-	      return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
-	      // do is to check its .name property.
-	      (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
-	    };
-
-	    exports.mark = function (genFun) {
-	      if (Object.setPrototypeOf) {
-	        Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
-	      } else {
-	        genFun.__proto__ = GeneratorFunctionPrototype;
-	        define(genFun, toStringTagSymbol, "GeneratorFunction");
-	      }
-
-	      genFun.prototype = Object.create(Gp);
-	      return genFun;
-	    }; // Within the body of any async function, `await x` is transformed to
-	    // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
-	    // `hasOwn.call(value, "__await")` to determine if the yielded value is
-	    // meant to be awaited.
-
-
-	    exports.awrap = function (arg) {
-	      return {
-	        __await: arg
-	      };
-	    };
-
-	    function AsyncIterator(generator, PromiseImpl) {
-	      function invoke(method, arg, resolve, reject) {
-	        var record = tryCatch(generator[method], generator, arg);
-
-	        if (record.type === "throw") {
-	          reject(record.arg);
-	        } else {
-	          var result = record.arg;
-	          var value = result.value;
-
-	          if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
-	            return PromiseImpl.resolve(value.__await).then(function (value) {
-	              invoke("next", value, resolve, reject);
-	            }, function (err) {
-	              invoke("throw", err, resolve, reject);
-	            });
-	          }
-
-	          return PromiseImpl.resolve(value).then(function (unwrapped) {
-	            // When a yielded Promise is resolved, its final value becomes
-	            // the .value of the Promise<{value,done}> result for the
-	            // current iteration.
-	            result.value = unwrapped;
-	            resolve(result);
-	          }, function (error) {
-	            // If a rejected Promise was yielded, throw the rejection back
-	            // into the async generator function so it can be handled there.
-	            return invoke("throw", error, resolve, reject);
-	          });
-	        }
-	      }
-
-	      var previousPromise;
-
-	      function enqueue(method, arg) {
-	        function callInvokeWithMethodAndArg() {
-	          return new PromiseImpl(function (resolve, reject) {
-	            invoke(method, arg, resolve, reject);
-	          });
-	        }
-
-	        return previousPromise = // If enqueue has been called before, then we want to wait until
-	        // all previous Promises have been resolved before calling invoke,
-	        // so that results are always delivered in the correct order. If
-	        // enqueue has not been called before, then it is important to
-	        // call invoke immediately, without waiting on a callback to fire,
-	        // so that the async generator function has the opportunity to do
-	        // any necessary setup in a predictable way. This predictability
-	        // is why the Promise constructor synchronously invokes its
-	        // executor callback, and why async functions synchronously
-	        // execute code before the first await. Since we implement simple
-	        // async functions in terms of async generators, it is especially
-	        // important to get this right, even though it requires care.
-	        previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
-	        // invocations of the iterator.
-	        callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
-	      } // Define the unified helper method that is used to implement .next,
-	      // .throw, and .return (see defineIteratorMethods).
-
-
-	      this._invoke = enqueue;
-	    }
-
-	    defineIteratorMethods(AsyncIterator.prototype);
-	    define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
-	      return this;
-	    });
-	    exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
-	    // AsyncIterator objects; they just return a Promise for the value of
-	    // the final result produced by the iterator.
-
-	    exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-	      if (PromiseImpl === void 0) PromiseImpl = Promise;
-	      var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
-	      return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
-	      : iter.next().then(function (result) {
-	        return result.done ? result.value : iter.next();
-	      });
-	    };
-
-	    function makeInvokeMethod(innerFn, self, context) {
-	      var state = GenStateSuspendedStart;
-	      return function invoke(method, arg) {
-	        if (state === GenStateExecuting) {
-	          throw new Error("Generator is already running");
-	        }
-
-	        if (state === GenStateCompleted) {
-	          if (method === "throw") {
-	            throw arg;
-	          } // Be forgiving, per 25.3.3.3.3 of the spec:
-	          // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
-
-
-	          return doneResult();
-	        }
-
-	        context.method = method;
-	        context.arg = arg;
-
-	        while (true) {
-	          var delegate = context.delegate;
-
-	          if (delegate) {
-	            var delegateResult = maybeInvokeDelegate(delegate, context);
-
-	            if (delegateResult) {
-	              if (delegateResult === ContinueSentinel) continue;
-	              return delegateResult;
-	            }
-	          }
-
-	          if (context.method === "next") {
-	            // Setting context._sent for legacy support of Babel's
-	            // function.sent implementation.
-	            context.sent = context._sent = context.arg;
-	          } else if (context.method === "throw") {
-	            if (state === GenStateSuspendedStart) {
-	              state = GenStateCompleted;
-	              throw context.arg;
-	            }
-
-	            context.dispatchException(context.arg);
-	          } else if (context.method === "return") {
-	            context.abrupt("return", context.arg);
-	          }
-
-	          state = GenStateExecuting;
-	          var record = tryCatch(innerFn, self, context);
-
-	          if (record.type === "normal") {
-	            // If an exception is thrown from innerFn, we leave state ===
-	            // GenStateExecuting and loop back for another invocation.
-	            state = context.done ? GenStateCompleted : GenStateSuspendedYield;
-
-	            if (record.arg === ContinueSentinel) {
-	              continue;
-	            }
-
-	            return {
-	              value: record.arg,
-	              done: context.done
-	            };
-	          } else if (record.type === "throw") {
-	            state = GenStateCompleted; // Dispatch the exception by looping back around to the
-	            // context.dispatchException(context.arg) call above.
-
-	            context.method = "throw";
-	            context.arg = record.arg;
-	          }
-	        }
-	      };
-	    } // Call delegate.iterator[context.method](context.arg) and handle the
-	    // result, either by returning a { value, done } result from the
-	    // delegate iterator, or by modifying context.method and context.arg,
-	    // setting context.delegate to null, and returning the ContinueSentinel.
-
-
-	    function maybeInvokeDelegate(delegate, context) {
-	      var method = delegate.iterator[context.method];
-
-	      if (method === undefined$1) {
-	        // A .throw or .return when the delegate iterator has no .throw
-	        // method always terminates the yield* loop.
-	        context.delegate = null;
-
-	        if (context.method === "throw") {
-	          // Note: ["return"] must be used for ES3 parsing compatibility.
-	          if (delegate.iterator["return"]) {
-	            // If the delegate iterator has a return method, give it a
-	            // chance to clean up.
-	            context.method = "return";
-	            context.arg = undefined$1;
-	            maybeInvokeDelegate(delegate, context);
-
-	            if (context.method === "throw") {
-	              // If maybeInvokeDelegate(context) changed context.method from
-	              // "return" to "throw", let that override the TypeError below.
-	              return ContinueSentinel;
-	            }
-	          }
-
-	          context.method = "throw";
-	          context.arg = new TypeError("The iterator does not provide a 'throw' method");
-	        }
-
-	        return ContinueSentinel;
-	      }
-
-	      var record = tryCatch(method, delegate.iterator, context.arg);
-
-	      if (record.type === "throw") {
-	        context.method = "throw";
-	        context.arg = record.arg;
-	        context.delegate = null;
-	        return ContinueSentinel;
-	      }
-
-	      var info = record.arg;
-
-	      if (!info) {
-	        context.method = "throw";
-	        context.arg = new TypeError("iterator result is not an object");
-	        context.delegate = null;
-	        return ContinueSentinel;
-	      }
-
-	      if (info.done) {
-	        // Assign the result of the finished delegate to the temporary
-	        // variable specified by delegate.resultName (see delegateYield).
-	        context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
-
-	        context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
-	        // exception, let the outer generator proceed normally. If
-	        // context.method was "next", forget context.arg since it has been
-	        // "consumed" by the delegate iterator. If context.method was
-	        // "return", allow the original .return call to continue in the
-	        // outer generator.
-
-	        if (context.method !== "return") {
-	          context.method = "next";
-	          context.arg = undefined$1;
-	        }
-	      } else {
-	        // Re-yield the result returned by the delegate method.
-	        return info;
-	      } // The delegate iterator is finished, so forget it and continue with
-	      // the outer generator.
-
-
-	      context.delegate = null;
-	      return ContinueSentinel;
-	    } // Define Generator.prototype.{next,throw,return} in terms of the
-	    // unified ._invoke helper method.
-
-
-	    defineIteratorMethods(Gp);
-	    define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
-	    // @@iterator function is called on it. Some browsers' implementations of the
-	    // iterator prototype chain incorrectly implement this, causing the Generator
-	    // object to not be returned from this call. This ensures that doesn't happen.
-	    // See https://github.com/facebook/regenerator/issues/274 for more details.
-
-	    define(Gp, iteratorSymbol, function () {
-	      return this;
-	    });
-	    define(Gp, "toString", function () {
-	      return "[object Generator]";
-	    });
-
-	    function pushTryEntry(locs) {
-	      var entry = {
-	        tryLoc: locs[0]
-	      };
-
-	      if (1 in locs) {
-	        entry.catchLoc = locs[1];
-	      }
-
-	      if (2 in locs) {
-	        entry.finallyLoc = locs[2];
-	        entry.afterLoc = locs[3];
-	      }
-
-	      this.tryEntries.push(entry);
-	    }
-
-	    function resetTryEntry(entry) {
-	      var record = entry.completion || {};
-	      record.type = "normal";
-	      delete record.arg;
-	      entry.completion = record;
-	    }
-
-	    function Context(tryLocsList) {
-	      // The root entry object (effectively a try statement without a catch
-	      // or a finally block) gives us a place to store values thrown from
-	      // locations where there is no enclosing try statement.
-	      this.tryEntries = [{
-	        tryLoc: "root"
-	      }];
-	      tryLocsList.forEach(pushTryEntry, this);
-	      this.reset(true);
-	    }
-
-	    exports.keys = function (object) {
-	      var keys = [];
-
-	      for (var key in object) {
-	        keys.push(key);
-	      }
-
-	      keys.reverse(); // Rather than returning an object with a next method, we keep
-	      // things simple and return the next function itself.
-
-	      return function next() {
-	        while (keys.length) {
-	          var key = keys.pop();
-
-	          if (key in object) {
-	            next.value = key;
-	            next.done = false;
-	            return next;
-	          }
-	        } // To avoid creating an additional object, we just hang the .value
-	        // and .done properties off the next function object itself. This
-	        // also ensures that the minifier will not anonymize the function.
-
-
-	        next.done = true;
-	        return next;
-	      };
-	    };
-
-	    function values(iterable) {
-	      if (iterable) {
-	        var iteratorMethod = iterable[iteratorSymbol];
-
-	        if (iteratorMethod) {
-	          return iteratorMethod.call(iterable);
-	        }
-
-	        if (typeof iterable.next === "function") {
-	          return iterable;
-	        }
-
-	        if (!isNaN(iterable.length)) {
-	          var i = -1,
-	              next = function next() {
-	            while (++i < iterable.length) {
-	              if (hasOwn.call(iterable, i)) {
-	                next.value = iterable[i];
-	                next.done = false;
-	                return next;
-	              }
-	            }
-
-	            next.value = undefined$1;
-	            next.done = true;
-	            return next;
-	          };
-
-	          return next.next = next;
-	        }
-	      } // Return an iterator with no values.
-
-
-	      return {
-	        next: doneResult
-	      };
-	    }
-
-	    exports.values = values;
-
-	    function doneResult() {
-	      return {
-	        value: undefined$1,
-	        done: true
-	      };
-	    }
-
-	    Context.prototype = {
-	      constructor: Context,
-	      reset: function (skipTempReset) {
-	        this.prev = 0;
-	        this.next = 0; // Resetting context._sent for legacy support of Babel's
-	        // function.sent implementation.
-
-	        this.sent = this._sent = undefined$1;
-	        this.done = false;
-	        this.delegate = null;
-	        this.method = "next";
-	        this.arg = undefined$1;
-	        this.tryEntries.forEach(resetTryEntry);
-
-	        if (!skipTempReset) {
-	          for (var name in this) {
-	            // Not sure about the optimal order of these conditions:
-	            if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
-	              this[name] = undefined$1;
-	            }
-	          }
-	        }
-	      },
-	      stop: function () {
-	        this.done = true;
-	        var rootEntry = this.tryEntries[0];
-	        var rootRecord = rootEntry.completion;
-
-	        if (rootRecord.type === "throw") {
-	          throw rootRecord.arg;
-	        }
-
-	        return this.rval;
-	      },
-	      dispatchException: function (exception) {
-	        if (this.done) {
-	          throw exception;
-	        }
-
-	        var context = this;
-
-	        function handle(loc, caught) {
-	          record.type = "throw";
-	          record.arg = exception;
-	          context.next = loc;
-
-	          if (caught) {
-	            // If the dispatched exception was caught by a catch block,
-	            // then let that catch block handle the exception normally.
-	            context.method = "next";
-	            context.arg = undefined$1;
-	          }
-
-	          return !!caught;
-	        }
-
-	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-	          var entry = this.tryEntries[i];
-	          var record = entry.completion;
-
-	          if (entry.tryLoc === "root") {
-	            // Exception thrown outside of any try block that could handle
-	            // it, so set the completion value of the entire function to
-	            // throw the exception.
-	            return handle("end");
-	          }
-
-	          if (entry.tryLoc <= this.prev) {
-	            var hasCatch = hasOwn.call(entry, "catchLoc");
-	            var hasFinally = hasOwn.call(entry, "finallyLoc");
-
-	            if (hasCatch && hasFinally) {
-	              if (this.prev < entry.catchLoc) {
-	                return handle(entry.catchLoc, true);
-	              } else if (this.prev < entry.finallyLoc) {
-	                return handle(entry.finallyLoc);
-	              }
-	            } else if (hasCatch) {
-	              if (this.prev < entry.catchLoc) {
-	                return handle(entry.catchLoc, true);
-	              }
-	            } else if (hasFinally) {
-	              if (this.prev < entry.finallyLoc) {
-	                return handle(entry.finallyLoc);
-	              }
-	            } else {
-	              throw new Error("try statement without catch or finally");
-	            }
-	          }
-	        }
-	      },
-	      abrupt: function (type, arg) {
-	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-	          var entry = this.tryEntries[i];
-
-	          if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
-	            var finallyEntry = entry;
-	            break;
-	          }
-	        }
-
-	        if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
-	          // Ignore the finally entry if control is not jumping to a
-	          // location outside the try/catch block.
-	          finallyEntry = null;
-	        }
-
-	        var record = finallyEntry ? finallyEntry.completion : {};
-	        record.type = type;
-	        record.arg = arg;
-
-	        if (finallyEntry) {
-	          this.method = "next";
-	          this.next = finallyEntry.finallyLoc;
-	          return ContinueSentinel;
-	        }
-
-	        return this.complete(record);
-	      },
-	      complete: function (record, afterLoc) {
-	        if (record.type === "throw") {
-	          throw record.arg;
-	        }
-
-	        if (record.type === "break" || record.type === "continue") {
-	          this.next = record.arg;
-	        } else if (record.type === "return") {
-	          this.rval = this.arg = record.arg;
-	          this.method = "return";
-	          this.next = "end";
-	        } else if (record.type === "normal" && afterLoc) {
-	          this.next = afterLoc;
-	        }
-
-	        return ContinueSentinel;
-	      },
-	      finish: function (finallyLoc) {
-	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-	          var entry = this.tryEntries[i];
-
-	          if (entry.finallyLoc === finallyLoc) {
-	            this.complete(entry.completion, entry.afterLoc);
-	            resetTryEntry(entry);
-	            return ContinueSentinel;
-	          }
-	        }
-	      },
-	      "catch": function (tryLoc) {
-	        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-	          var entry = this.tryEntries[i];
-
-	          if (entry.tryLoc === tryLoc) {
-	            var record = entry.completion;
-
-	            if (record.type === "throw") {
-	              var thrown = record.arg;
-	              resetTryEntry(entry);
-	            }
-
-	            return thrown;
-	          }
-	        } // The context.catch method must only be called with a location
-	        // argument that corresponds to a known catch block.
-
-
-	        throw new Error("illegal catch attempt");
-	      },
-	      delegateYield: function (iterable, resultName, nextLoc) {
-	        this.delegate = {
-	          iterator: values(iterable),
-	          resultName: resultName,
-	          nextLoc: nextLoc
-	        };
-
-	        if (this.method === "next") {
-	          // Deliberately forget the last sent value so that we don't
-	          // accidentally pass it on to the delegate.
-	          this.arg = undefined$1;
-	        }
-
-	        return ContinueSentinel;
-	      }
-	    }; // Regardless of whether this script is executing as a CommonJS module
-	    // or not, return the runtime object so that we can declare the variable
-	    // regeneratorRuntime in the outer scope, which allows this module to be
-	    // injected easily by `bin/regenerator --include-runtime script.js`.
-
-	    return exports;
-	  }( // If this script is executing as a CommonJS module, use module.exports
-	  // as the regeneratorRuntime namespace. Otherwise create a new empty
-	  // object. Either way, the resulting object will be used to initialize
-	  // the regeneratorRuntime variable at the top of this file.
-	  module.exports );
-
-	  try {
-	    regeneratorRuntime = runtime;
-	  } catch (accidentalStrictMode) {
-	    // This module should not be running in strict mode, so the above
-	    // assignment should always work unless something is misconfigured. Just
-	    // in case runtime.js accidentally runs in strict mode, in modern engines
-	    // we can explicitly access globalThis. In older engines we can escape
-	    // strict mode using a global Function call. This could conceivably fail
-	    // if a Content Security Policy forbids using Function, but in that case
-	    // the proper solution is to fix the accidental strict mode problem. If
-	    // you've misconfigured your bundler to force strict mode and applied a
-	    // CSP to forbid Function, and you're not willing to fix either of those
-	    // problems, please detail your unique predicament in a GitHub issue.
-	    if (typeof globalThis === "object") {
-	      globalThis.regeneratorRuntime = runtime;
-	    } else {
-	      Function("r", "regeneratorRuntime = r")(runtime);
-	    }
-	  }
-	})(runtime);
-
-	var sid = function () {
-	  var _marked = /*#__PURE__*/regeneratorRuntime.mark(sequence);
-
-	  var sequences = {};
-
-	  function sequence(ref) {
-	    var i;
-	    return regeneratorRuntime.wrap(function sequence$(_context) {
-	      while (1) {
-	        switch (_context.prev = _context.next) {
-	          case 0:
-	            i = 0;
-
-	          case 1:
-
-	            _context.next = 4;
-	            return "".concat(ref, "-").concat(i);
-
-	          case 4:
-	            i++;
-	            _context.next = 1;
-	            break;
-
-	          case 7:
-	          case "end":
-	            return _context.stop();
-	        }
-	      }
-	    }, _marked);
-	  }
-
-	  return function (id) {
-	    if (!sequences[id]) sequences[id] = sequence(id);
-	    return sequences[id].next().value;
-	  };
-	}();
-	function autoBox() {
-	  var _this$getBBox = this.getBBox(),
-	      x = _this$getBBox.x,
-	      y = _this$getBBox.y,
-	      width = _this$getBBox.width,
-	      height = _this$getBBox.height;
-
-	  return [x, y, width, height];
 	}
 
 	var radialTree = function radialTree(ecosystem, element) {
@@ -10042,16 +10030,16 @@
 	  return svg.node();
 	};
 
-	d3.csv('ecosystem-tree.csv').then(function (data) {
-	  var ecosystem = d3.stratify().id(function (x) {
+	csv('ecosystem-tree.csv').then(function (data) {
+	  var ecosystem = stratify().id(function (x) {
 	    return x.id;
 	  }).parentId(function (x) {
 	    return x.parent;
 	  })(data);
-	  forceTree(ecosystem, d3.select("#tree"));
-	  packChart(ecosystem, d3.select("#pack-chart"));
-	  sunburst(ecosystem, d3.select("#sunburst"));
-	  radialTree(ecosystem, d3.select("#radial-tree"));
+	  forceTree(ecosystem, select("#tree"));
+	  packChart(ecosystem, select("#pack-chart"));
+	  sunburst(ecosystem, select("#sunburst"));
+	  radialTree(ecosystem, select("#radial-tree"));
 	});
 
 })();
