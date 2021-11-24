@@ -3,6 +3,8 @@ import { radialTree } from './radial-tree';
 import { sunburst } from './sunburst';
 import { packChart } from './pack-chart';
 
+import './style.css';
+
 import * as d3 from './lib/d3';
 
 d3.csv('ecosystem-tree.csv').then(data => {
