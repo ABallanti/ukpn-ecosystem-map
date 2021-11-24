@@ -1,4 +1,5 @@
 import { sid } from './util';
+import * as d3 from 'd3';
 
 // https://observablehq.com/@d3/circle-packing
 export const packChart = (ecosystem, element) => {

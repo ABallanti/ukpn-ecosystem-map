@@ -1,4 +1,5 @@
 import { autoBox } from './util';
+import * as d3 from 'd3';
 
 // https://observablehq.com/@d3/radial-tidy-tree?collection=@d3/d3-hierarchy
 export const radialTree = (ecosystem, element) => {

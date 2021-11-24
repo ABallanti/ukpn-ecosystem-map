@@ -1,4 +1,5 @@
 import { autoBox } from './util';
+import * as d3 from 'd3';
 
 export const sunburst = (ecosystem, element) => {
   const width = 800;
