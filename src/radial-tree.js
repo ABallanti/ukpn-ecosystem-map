@@ -53,7 +53,7 @@ export const radialTree = (ecosystem, element) => {
     .attr("dy", "0.31em")
     .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
     .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-    .text(d => d.data.node)
+    .text(d => d.data.id)
     .clone(true).lower()
     .attr("stroke", "white");
 

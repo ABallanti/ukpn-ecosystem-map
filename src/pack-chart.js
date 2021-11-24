@@ -56,14 +56,14 @@ export const packChart = (ecosystem, element) => {
   leaf.append("text")
     .attr("clip-path", d => d.clipUid)
     .selectAll("tspan")
-    .data(d => d.data.node.split(/(?=[A-Z][a-z])|\s+/g))
+    .data(d => d.data.id.split(/(?=[A-Z][a-z])|\s+/g))
     .join("tspan")
     .attr("x", 0)
     .attr("y", (d, i, nodes) => `${i - nodes.length / 2 + 0.8}em`)
     .text(d => d);
 
   node.append("title")
-    .text(d => `${d.ancestors().map(d => d.data.node).reverse().join("/")}\n${format(d.value)}`);
+    .text(d => `${d.ancestors().map(d => d.data.id).reverse().join("/")}\n${format(d.value)}`);
 
   return svg.node();
 };

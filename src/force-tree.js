@@ -58,16 +58,20 @@ export const forceTree = (ecosystem, element) => {
 
   const tooltip = element.append('div').attr('class', 'tooltip hide');
 
-  const mouseover = (evt, entity) => {
-    const { node, name, type } = entity.data;
-    const content = `<h1>${name || node} (${type})</h1>`;
+  const showTooltip = (entity) => {
+    const { id, name, type } = entity.data;
+    const content = `
+      <h1>${name || id} (${type})</h1>
+      <p>${nodePath(entity)}</p>
+    `;
     tooltip.classed('hide', false);
     tooltip.html(content);
   };
-  const mouseout = (evt, node) => {
-    tooltip.classed('hide', true);
-    tooltip.html('');
+
+  const hideTooltip = (entity) => {
+    tooltip.classed('hide', !entity.selected);
   };
+
   const node = svg
     .append('g')
     .selectAll('circle')
@@ -76,17 +80,21 @@ export const forceTree = (ecosystem, element) => {
     .attr('class', (d) => d.data.type)
     .attr('r', 3.5)
     .call(drag(simulation))
-    .on('mouseover', mouseover)
-    .on('mouseout', mouseout);
+    .on('mouseover', (_, i) => showTooltip(i))
+    .on('mouseout', (_, i) => hideTooltip(i))
+    .on('click', (_, i) => {
+      node.enter().selected = false;
+      i.selected = true;
+    });
 
-  node.append('title').text(
-    (d) =>
-      `${d
-        .ancestors()
-        .map((d) => d.data.node)
-        .reverse()
-        .join('/')}`
-  );
+  const nodePath = (d) =>
+    d
+      .ancestors()
+      .map((d) => d.data.id)
+      .reverse()
+      .join('/');
+
+  node.append('title').text((d) => nodePath(d));
 
   simulation.on('tick', () => {
     link

@@ -30,10 +30,10 @@ export const sunburst = (ecosystem, element) => {
     .selectAll("path")
     .data(root.descendants().filter(d => d.depth))
     .join("path")
-    .attr("fill", d => { while (d.depth > 1) d = d.parent; return color(d.data.node); })
+    .attr("fill", d => { while (d.depth > 1) d = d.parent; return color(d.data.id); })
     .attr("d", arc)
     .append("title")
-    .text(d => `${d.ancestors().map(d => d.data.node).reverse().join("/")}\n${format(d.value)}`);
+    .text(d => `${d.ancestors().map(d => d.data.id).reverse().join("/")}\n${format(d.value)}`);
 
   svg.append("g")
     .attr("pointer-events", "none")
@@ -49,7 +49,7 @@ export const sunburst = (ecosystem, element) => {
       return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
     })
     .attr("dy", "0.35em")
-    .text(d => d.data.node);
+    .text(d => d.data.id);
 
   return svg.attr("viewBox", autoBox).node();
 }
