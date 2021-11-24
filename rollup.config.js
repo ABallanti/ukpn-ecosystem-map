@@ -11,6 +11,15 @@ import autoprefixer from 'autoprefixer';
 const dev = process.env.NODE_ENV === 'development';
 
 export default {
+  onwarn: function (warning, warn) {
+    const modulesWithCircularDependencies = ['d3-selection', 'd3-interpolate', 'd3-transition'];
+    if (
+      warning.code === 'CIRCULAR_DEPENDENCY' &&
+      warning.importer.match(new RegExp(modulesWithCircularDependencies.join('|')))
+    )
+      return;
+    warn(warning);
+  },
   input: 'src/main.js',
   plugins: [
     resolve(),
