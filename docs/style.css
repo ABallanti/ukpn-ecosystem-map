@@ -12,6 +12,18 @@ body > * {
   margin-right: auto;
 }
 
+body > header {
+  padding: 2em;
+  background: #fff;
+  display: flex;
+  align-items: center;
+}
+
+body > header > img {
+  height: 2rem;
+  padding-right: 1em;
+}
+
 main section h1 {
   font-size: 1em;
 }
