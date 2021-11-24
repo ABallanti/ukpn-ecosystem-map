@@ -6,6 +6,8 @@
   "main": "index.js",
   "scripts": {
     "build": "rollup --config rollup.config.js",
+    "dev": "NODE_ENV=development npm run build -- --watch",
+    "postdev": "npm run build",
     "prepare": "npx browserslist@latest --update-db",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -34,7 +36,9 @@
     "@rollup/plugin-node-resolve": "^13.0.6",
     "rollup": "^2.60.1",
     "rollup-cli": "^1.0.9",
+    "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-serve": "^1.1.0",
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
