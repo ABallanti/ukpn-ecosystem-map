@@ -1,26 +1,26 @@
-node,parent,name
-UKPN,,Root Node
-Asset,UKPN,
-Network,UKPN,
-Asset Register,Asset,
-Characteristics,Asset Register,
-Attribution,Asset Register,
-Measurements,Asset Register,
-Condition,Asset Register,
-Defects,Asset Register,
-Geospatial,Network,
-Sites,Geospatial,
-Circuits,Geospatial,
-Location,Geospatial,
-Connectivity,Geospatial,
-Operational,Network,
-SCADA,Operational,
-Faults,Operational,
-Time Series,Network,
-xxx,Time Series,
-Capacity,Network,
-Load Capacity,Capacity,
-Generation Capacity,Capacity,
-Load Indices,Capacity,
-Utilisation,Network,
-Maximum Demand,Utilisation
+node,parent,name,type
+UKPN,,Root Node,root
+Asset,UKPN,,domain
+Network,UKPN,,domain
+Asset Register,Asset,,data-class
+Characteristics,Asset Register,,critical-data-entity
+Attribution,Asset Register,,critical-data-entity
+Measurements,Asset Register,,critical-data-entity
+Condition,Asset Register,,critical-data-entity
+Defects,Asset Register,,critical-data-entity
+Geospatial,Network,,data-class
+Sites,Geospatial,,critical-data-entity
+Circuits,Geospatial,,critical-data-entity
+Location,Geospatial,,critical-data-entity
+Connectivity,Geospatial,,critical-data-entity
+Operational,Network,,data-class
+SCADA,Operational,,critical-data-entity
+Faults,Operational,,critical-data-entity
+Time Series,Network,,data-class
+xxx,Time Series,,critical-data-entity
+Capacity,Network,,data-class
+Load Capacity,Capacity,,critical-data-entity
+Generation Capacity,Capacity,,critical-data-entity
+Load Indices,Capacity,,critical-data-entity
+Utilisation,Network,,data-class
+Maximum Demand,Utilisation,Maximum Demand,critical-data-entity

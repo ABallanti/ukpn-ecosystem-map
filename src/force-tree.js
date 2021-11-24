@@ -56,18 +56,28 @@ export const forceTree = (ecosystem, element) => {
       .on('end', dragended);
   };
 
+  const tooltip = element.append('div').attr('class', 'tooltip hide');
+
+  const mouseover = (evt, entity) => {
+    const { node, name, type } = entity.data;
+    const content = `<h1>${name || node} (${type})</h1>`;
+    tooltip.classed('hide', false);
+    tooltip.html(content);
+  };
+  const mouseout = (evt, node) => {
+    tooltip.classed('hide', true);
+    tooltip.html('');
+  };
   const node = svg
     .append('g')
-    .attr('fill', '#fff')
-    .attr('stroke', '#000')
-    .attr('stroke-width', 1.5)
     .selectAll('circle')
     .data(nodes)
     .join('circle')
-    .attr('fill', (d) => (d.children ? null : '#000'))
-    .attr('stroke', (d) => (d.children ? null : '#fff'))
+    .attr('class', (d) => d.data.type)
     .attr('r', 3.5)
-    .call(drag(simulation));
+    .call(drag(simulation))
+    .on('mouseover', mouseover)
+    .on('mouseout', mouseout);
 
   node.append('title').text(
     (d) =>
