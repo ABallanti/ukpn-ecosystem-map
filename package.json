@@ -33,7 +33,8 @@
     "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-node-resolve": "^13.0.6",
     "rollup": "^2.60.1",
-    "rollup-cli": "^1.0.9"
+    "rollup-cli": "^1.0.9",
+    "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
     "core-js": "^3.19.1",
