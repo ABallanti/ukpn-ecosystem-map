@@ -1,6 +1,8 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
 
+const sparseness = 50;
+
 // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 export const forceTree = (ecosystem, element) => {
   const width = 200;
@@ -18,7 +20,7 @@ export const forceTree = (ecosystem, element) => {
         .distance(0)
         .strength(1)
     )
-    .force('charge', d3.forceManyBody().strength(-50))
+    .force('charge', d3.forceManyBody().strength(-sparseness))
     .force('x', d3.forceX())
     .force('y', d3.forceY());
 
@@ -50,7 +52,7 @@ export const forceTree = (ecosystem, element) => {
   };
 
   const hideTooltip = (entity) => {
-    tooltip.classed('hide', !entity.selected);
+    tooltip.classed('hide', true);
   };
 
   const node = graph
@@ -63,11 +65,7 @@ export const forceTree = (ecosystem, element) => {
     .attr('r', 3.5)
     .call(drag(simulation))
     .on('mouseover', (_, i) => showTooltip(i))
-    .on('mouseout', (_, i) => hideTooltip(i))
-    .on('click', (_, i) => {
-      node.enter().selected = false;
-      i.selected = true;
-    });
+    .on('mouseout', (_, i) => hideTooltip(i));
 
   function zoomed({ transform }) {
     graph.attr("transform", transform);

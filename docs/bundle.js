@@ -7777,6 +7777,8 @@
 	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 	};
 
+	var sparseness = 50; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
+
 	var forceTree = function forceTree(ecosystem, element) {
 	  var width = 200;
 	  var height = width;
@@ -7788,7 +7790,7 @@
 	  });
 	  var simulation$1 = simulation(nodes).force('link', link$1(links).id(function (d) {
 	    return d.id;
-	  }).distance(0).strength(1)).force('charge', manyBody().strength(-50)).force('x', x$1()).force('y', y$1());
+	  }).distance(0).strength(1)).force('charge', manyBody().strength(-sparseness)).force('x', x$1()).force('y', y$1());
 	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
 	  var graph = svg.append('g').attr('id', 'graph');
 	  var link = graph.append('g').attr('id', 'edges').selectAll('line').data(links).join('line').attr('class', function (d) {
@@ -7807,7 +7809,7 @@
 	  };
 
 	  var hideTooltip = function hideTooltip(entity) {
-	    tooltip.classed('hide', !entity.selected);
+	    tooltip.classed('hide', true);
 	  };
 
 	  var node = graph.append('g').attr('id', 'nodes').selectAll('circle').data(nodes).join('circle').attr('class', function (d) {
@@ -7815,10 +7817,7 @@
 	  }).attr('r', 3.5).call(drag(simulation$1)).on('mouseover', function (_, i) {
 	    return showTooltip(i);
 	  }).on('mouseout', function (_, i) {
-	    return hideTooltip(i);
-	  }).on('click', function (_, i) {
-	    node.enter().selected = false;
-	    i.selected = true;
+	    return hideTooltip();
 	  });
 
 	  function zoomed(_ref) {
