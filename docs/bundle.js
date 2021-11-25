@@ -3133,7 +3133,7 @@
 	  return navigator.maxTouchPoints || "ontouchstart" in this;
 	}
 
-	function drag () {
+	function d3drag () {
 	  var filter = defaultFilter$1,
 	      container = defaultContainer,
 	      subject = defaultSubject,
@@ -7756,6 +7756,27 @@
 	  return zoom;
 	}
 
+	var drag = function drag(simulation) {
+	  function dragstarted(event, d) {
+	    if (!event.active) simulation.alphaTarget(0.3).restart();
+	    d.fx = d.x;
+	    d.fy = d.y;
+	  }
+
+	  function dragged(event, d) {
+	    d.fx = event.x;
+	    d.fy = event.y;
+	  }
+
+	  function dragended(event, d) {
+	    if (!event.active) simulation.alphaTarget(0);
+	    d.fx = null;
+	    d.fy = null;
+	  }
+
+	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
+	};
+
 	var forceTree = function forceTree(ecosystem, element) {
 	  var width = 200;
 	  var height = width;
@@ -7773,28 +7794,6 @@
 	  var link = graph.append('g').attr('id', 'edges').selectAll('line').data(links).join('line').attr('class', function (d) {
 	    return d.source.data.type;
 	  });
-
-	  var drag$1 = function drag$1(simulation) {
-	    function dragstarted(event, d) {
-	      if (!event.active) simulation.alphaTarget(0.3).restart();
-	      d.fx = d.x;
-	      d.fy = d.y;
-	    }
-
-	    function dragged(event, d) {
-	      d.fx = event.x;
-	      d.fy = event.y;
-	    }
-
-	    function dragended(event, d) {
-	      if (!event.active) simulation.alphaTarget(0);
-	      d.fx = null;
-	      d.fy = null;
-	    }
-
-	    return drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
-	  };
-
 	  var tooltip = element.append('div').attr('class', 'tooltip hide');
 
 	  var showTooltip = function showTooltip(entity) {
@@ -7813,7 +7812,7 @@
 
 	  var node = graph.append('g').attr('id', 'nodes').selectAll('circle').data(nodes).join('circle').attr('class', function (d) {
 	    return d.data.type;
-	  }).attr('r', 3.5).call(drag$1(simulation$1)).on('mouseover', function (_, i) {
+	  }).attr('r', 3.5).call(drag(simulation$1)).on('mouseover', function (_, i) {
 	    return showTooltip(i);
 	  }).on('mouseout', function (_, i) {
 	    return hideTooltip(i);
