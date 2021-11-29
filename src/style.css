@@ -85,3 +85,11 @@ main section h1 {
   stroke: #999;
   stroke-opacity: 0.6;
 }
+
+table {
+  border-collapse: collapse;
+}
+.tooltip th, .tooltip td {
+  border: 1px solid #444;
+  padding: 0.5em;
+}

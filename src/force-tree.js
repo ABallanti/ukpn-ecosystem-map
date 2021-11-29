@@ -43,10 +43,16 @@ export const forceTree = (ecosystem, element) => {
   const tooltip = element.append('div').attr('class', 'tooltip hide');
 
   const showTooltip = (entity) => {
-    const { id, name, type } = entity.data;
+    const { id, name, type, description } = entity.data;
+    const row = (...content) => `<tr>${ content.join('') }</tr>`
+    const kv = (label, value, scale) => `<th>${ label }</th><td ${ scale ? ' colspan=' + scale : '' }>${ value }</td>`
+
     const content = `
-      <h1>${name || id} (${type})</h1>
-      <p>${nodePath(entity)}</p>
+      <table>
+        ${ row(kv('Name', name || id ), kv('Type', type )) }
+        ${ row(kv('Path', nodePath(entity), 3)) }
+        ${ row(kv('Description', description, 3)) }
+      </table>
     `;
     tooltip.classed('hide', false);
     tooltip.html(content);
