@@ -1,12 +1,16 @@
 * {
   padding: 0;
   margin: 0;
+  font-size: 1em;
+}
+
+html {
   font-family: monospace;
   font-size: 16px;
   font-weight: normal;
 }
 
-body > * {
+.centre-column {
   max-width: 720px;
   margin-left: auto;
   margin-right: auto;
@@ -22,6 +26,21 @@ body > header {
 body > header > img {
   height: 2rem;
   padding-right: 1em;
+}
+
+.page-footer {
+  color: white;
+  background: #444;
+  position: relative;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  margin-top: 2rem;
+  font-size: 0.8em;
+}
+.page-footer a {
+  color: hsl(40, 60%, 50%);
 }
 
 main section h1 {
