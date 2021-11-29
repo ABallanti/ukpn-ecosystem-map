@@ -7,8 +7,9 @@ const sparseness = 50;
 export const forceTree = (ecosystem, element) => {
   const width = 200;
   const height = width;
-  const links = ecosystem.links().filter(d => d.source.depth > 0);
-  const nodes = ecosystem.descendants().filter(d => d.depth > 0);
+  const minDepth = -1; // Set to 0 to exclude root
+  const links = ecosystem.links().filter(d => d.source.depth > minDepth);
+  const nodes = ecosystem.descendants().filter(d => d.depth > minDepth);
 
   const simulation = d3
     .forceSimulation(nodes)

@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UKPN Prototype Visualisation</title>
+  <title>UKPN Internal Data Ecosystem Map</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,37 +14,8 @@
     <img src="https://www.ukpowernetworks.co.uk/-/media/images/uk-power-networks/logo_svg.ashx?la=en&hash=5CBFA8DF9BD3DE5BE3C2CE43CEF37689BADAF618" alt="UK Power Networks">
     <h1>Internal Data Ecosystem Map</h1>
   </header>
-  <main role="main" class="tabs">
-    <section class="tab">
-      <input type="radio" class="tab-selector" id="tab-2" name="tab" checked="checked" />
-      <label class="tab-top" for="tab-2">
-        <h1 >Tree Chart</h1>
-      </label>
-      <div id="tree" class="tab-content"></div>
-    </section>
-    <section class="tab">
-      <input type="radio" class="tab-selector" id="tab-1" name="tab" />
-      <label class="tab-top" for="tab-1">
-        <h1 >Pack Chart</h1>
-      </label>
-      <div id="pack-chart" class="tab-content"></div>
-    </section>
-    <section class="tab">
-      <input type="radio" class="tab-selector" id="tab-3" name="tab" />
-      <label class="tab-top"for="tab-3">
-        <h1>Sunburst</h1>
-      </label>
-      <div id="sunburst" class="tab-content">
-        <p>NB the layout of this is not quite correct yet</p>
-      </div>
-    </section>
-    <section class="tab">
-      <input type="radio" class="tab-selector" id="tab-4" name="tab" />
-      <label class="tab-top"for="tab-4">
-        <h1>Radial Tree</h1>
-      </label>
-      <div id="radial-tree" class="tab-content"></div>
-    </section>
+  <main role="main">
+    <section id="tree" class="graph"></section>
   </main>
 </body>
 <script src="bundle.min.js"></script>
