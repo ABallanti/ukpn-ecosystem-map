@@ -1,26 +1,26 @@
-id,parent,name,type
-ukpn,,UKPN,root
-asset,ukpn,Asset,domain
-network,ukpn,Network,domain
-asset-register,asset,Asset Register,data-class
-characteristics,asset-register,Characteristics,critical-data-entity
-attribution,asset-register,Attribution,critical-data-entity
-measurements,asset-register,Measurements,critical-data-entity
-condition,asset-register,Condition,critical-data-entity
-defects,asset-register,Defects,critical-data-entity
-geospatial,network,Geospatial,data-class
-sites,geospatial,Sites,critical-data-entity
-circuits,geospatial,Circuits,critical-data-entity
-location,geospatial,Location,critical-data-entity
-connectivity,geospatial,Connectivity,critical-data-entity
-operational,network,Operational,data-class
-scada,operational,SCADA,critical-data-entity
-faults,operational,Faults,critical-data-entity
-time-series,network,Time Series,data-class
-xxx,time-series,xxx,critical-data-entity
-capacity,network,Capacity,data-class
-load-capacity,capacity,Load Capacity,critical-data-entity
-generation-capacity,capacity,Generation Capacity,critical-data-entity
-load-indices,capacity,Load Indices,critical-data-entity
-utilisation,network,Utilisation,data-class
-maximum-demand,utilisation,Maximum Demand,critical-data-entity
+id,parent,name,type,description
+ukpn,,UKPN,root,
+asset,ukpn,Asset,domain,
+network,ukpn,Network,domain,
+asset-register,asset,Asset Register,data-class,
+characteristics,asset-register,Characteristics,critical-data-entity,
+attribution,asset-register,Attribution,critical-data-entity,
+measurements,asset-register,Measurements,critical-data-entity,
+condition,asset-register,Condition,critical-data-entity,
+defects,asset-register,Defects,critical-data-entity,
+geospatial,network,Geospatial,data-class,
+sites,geospatial,Sites,critical-data-entity,
+circuits,geospatial,Circuits,critical-data-entity,
+location,geospatial,Location,critical-data-entity,
+connectivity,geospatial,Connectivity,critical-data-entity,
+operational,network,Operational,data-class,
+scada,operational,SCADA,critical-data-entity,
+faults,operational,Faults,critical-data-entity,
+time-series,network,Time Series,data-class,
+xxx,time-series,xxx,critical-data-entity,
+capacity,network,Capacity,data-class,
+load-capacity,capacity,Load Capacity,critical-data-entity,
+generation-capacity,capacity,Generation Capacity,critical-data-entity,
+load-indices,capacity,Load Indices,critical-data-entity,
+utilisation,network,Utilisation,data-class,
+maximum-demand,utilisation,Maximum Demand,critical-data-entity,
