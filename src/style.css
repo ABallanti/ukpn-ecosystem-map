@@ -49,7 +49,6 @@ main section h1 {
 
 .graph {
   background-color: #dee;
-  border-radius: 10px 10px 10px 10px;
   overflow: hidden;
   position: relative;
 }
@@ -68,12 +67,20 @@ main section h1 {
 }
 
 /* Graph */
-#nodes {
+#nodes rect {
   stroke: #111;
   stroke-width: 1px;
 }
+#nodes text {
+  font-size: 8pt;
+  fill: white;
+}
+
 #nodes .domain {
   fill: yellow;
+}
+#nodes .domain text {
+  fill: black;
 }
 #nodes .data-class {
   fill: blue;
@@ -82,7 +89,7 @@ main section h1 {
   fill: green;
 }
 #nodes .collapsed {
-  stroke-width: 2px;
+  stroke-width: 10px;
   stroke: #999;
 }
 #edges {

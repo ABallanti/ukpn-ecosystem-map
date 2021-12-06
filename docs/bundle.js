@@ -7739,11 +7739,11 @@
 	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 	};
 
-	var sparseness = 50; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
+	var sparseness = 2000; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 
 	var forceTree = function forceTree(ecosystem, element) {
-	  var width = 200;
-	  var height = width;
+	  var width = 1000;
+	  var height = 800;
 	  var minDepth = -1; // Set to 0 to exclude root
 
 	  ecosystem.descendants().forEach(function (d) {
@@ -7827,16 +7827,26 @@
 	      update();
 	    }
 
-	    var node = graph.append('g').attr('id', 'nodes').selectAll('circle').data(nodes).join('circle').attr('class', function (d) {
+	    var node = graph.append('g').attr('id', 'nodes').selectAll('g').data(nodes).join('g').attr('class', function (d) {
 	      return d.data.type;
-	    }).classed('collapsed', function (d) {
+	    });
+	    var rectWidth = 100;
+	    var rectHeight = rectWidth / 3;
+	    node.append('rect').classed('collapsed', function (d) {
 	      return d.collapsed;
-	    }).attr('r', 3.5).call(drag(simulation$1)).on('click', function (_, i) {
+	    }).attr('transform', "translate(".concat(-rectWidth / 2, " ").concat(-rectHeight / 2, ")")).attr('width', rectWidth).attr('height', rectHeight).attr('rx', 5).call(drag(simulation$1)).on('click', function (_, i) {
 	      return collapseOrExpandChildren(i);
 	    }).on('mouseover', function (_, i) {
 	      return showTooltip(i);
 	    }).on('mouseout', function (_, i) {
 	      return hideTooltip();
+	    });
+	    node.append('text').attr('text-anchor', 'middle') // .attr('x', 0)
+	    // .attr('y', 0)
+	    // .attr('textLength', 20)
+	    .text(function (d) {
+	      console.dir(d.data);
+	      return d.data.name;
 	    });
 	    simulation$1.on('tick', function () {
 	      link$1.attr('x1', function (d) {
@@ -7848,10 +7858,8 @@
 	      }).attr('y2', function (d) {
 	        return d.target.y;
 	      });
-	      node.attr('cx', function (d) {
-	        return d.x;
-	      }).attr('cy', function (d) {
-	        return d.y;
+	      node.attr('transform', function (d) {
+	        return "translate(".concat(d.x, " ").concat(d.y, ")");
 	      });
 	    });
 	    node.append('title').text(function (d) {

@@ -1,12 +1,12 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
 
-const sparseness = 50;
+const sparseness = 2000;
 
 // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 export const forceTree = (ecosystem, element) => {
-  const width = 200;
-  const height = width;
+  const width = 1000;
+  const height = 800;
   const minDepth = -1; // Set to 0 to exclude root
 
   ecosystem.descendants().forEach((d) => {
@@ -100,16 +100,35 @@ export const forceTree = (ecosystem, element) => {
     const node = graph
       .append('g')
       .attr('id', 'nodes')
-      .selectAll('circle')
+      .selectAll('g')
       .data(nodes)
-      .join('circle')
-      .attr('class', (d) => d.data.type)
-      .classed('collapsed', d => d.collapsed)
-      .attr('r', 3.5)
+      .join('g')
+      .attr('class', (d) => d.data.type);
+
+    const rectWidth = 100;
+    const rectHeight = rectWidth / 3;
+    node
+      .append('rect')
+      .classed('collapsed', (d) => d.collapsed)
+      .attr('transform', `translate(${-rectWidth / 2} ${-rectHeight / 2})`)
+      .attr('width', rectWidth)
+      .attr('height', rectHeight)
+      .attr('rx', 5)
       .call(drag(simulation))
       .on('click', (_, i) => collapseOrExpandChildren(i))
       .on('mouseover', (_, i) => showTooltip(i))
       .on('mouseout', (_, i) => hideTooltip(i));
+
+    node
+      .append('text')
+      .attr('text-anchor', 'middle')
+      // .attr('x', 0)
+      // .attr('y', 0)
+      // .attr('textLength', 20)
+      .text((d) => {
+        console.dir(d.data);
+        return d.data.name;
+      });
 
     simulation.on('tick', () => {
       link
@@ -118,7 +137,7 @@ export const forceTree = (ecosystem, element) => {
         .attr('x2', (d) => d.target.x)
         .attr('y2', (d) => d.target.y);
 
-      node.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
+      node.attr('transform', (d) => `translate(${d.x} ${d.y})`);
     });
 
     node.append('title').text((d) => nodePath(d));
