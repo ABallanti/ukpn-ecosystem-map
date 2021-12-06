@@ -81,6 +81,10 @@ main section h1 {
 #nodes .critical-data-entity {
   fill: green;
 }
+#nodes .collapsed {
+  stroke-width: 2px;
+  stroke: #999;
+}
 #edges {
   stroke: #999;
   stroke-opacity: 0.6;
