@@ -8,7 +8,7 @@ import {
   forceY
 } from 'd3-force';
 import { stratify } from 'd3-hierarchy';
-import { select } from 'd3-selection';
+import { select, selectAll } from 'd3-selection';
 import { zoom } from 'd3-zoom';
 
 export {
@@ -20,6 +20,7 @@ export {
   forceX,
   forceY,
   select,
+  selectAll,
   stratify,
   zoom,
 };

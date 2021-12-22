@@ -23,10 +23,14 @@ export const forceTree = (ecosystem, element) => {
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
   const tooltip = element.append('div').attr('class', 'tooltip empty');
-
+  const clearSelections = () => d3.selectAll('#nodes > g').classed('selected', false);
+  const selectNode = (id) => d3.select(`#${id}`).classed('selected', true);
   const showTooltip = (entity) => {
+    if (graph.locked) return;
     const { id, name, type, description } = entity.data;
-    
+    clearSelections();
+    selectNode(id);
+
     const keyDataEntities = entity.descendants().filter(x => x.data.type === KEY_DATA_ENTITY);
     const listKeyDataEntities = (list, heading) => {
       if (list.length < 1) return '';
@@ -51,7 +55,10 @@ export const forceTree = (ecosystem, element) => {
     const content = `
       <article>
       <h1>Instructions</h1>
-      <p>Hover over a node to show the metadata</p>
+      <p>
+        Hover over a node to show the metadata.
+        Click a node to lock the current selection.
+      </p>
       </article>
     `;
     tooltip.html(content);
@@ -59,9 +66,19 @@ export const forceTree = (ecosystem, element) => {
   setDefaultTooltipContent();
 
   const hideTooltip = (entity) => {
-    tooltip.classed('empty', true);
+    if (graph.locked) return;
+    clearSelections();
     setDefaultTooltipContent();
   };
+
+  const toggleTooltipLock = (entity) => {
+    if (graph.locked && graph.locked != entity.data.id) return;
+
+    if (graph.locked) graph.locked = undefined;
+    else graph.locked = entity.data.id;
+
+    console.log(graph.locked);
+  }
 
   function update() {
     svg.select('#graph').remove();
@@ -123,6 +140,7 @@ export const forceTree = (ecosystem, element) => {
       .selectAll('g')
       .data(nodes)
       .join('g')
+      .attr('id', (d) => d.data.id)
       .attr('class', (d) => d.data.type);
 
     node
@@ -130,7 +148,7 @@ export const forceTree = (ecosystem, element) => {
       .classed('collapsed', d => d.collapsed)
       .attr('r', 15)
       .call(drag(simulation))
-      .on('click', (_, i) => collapseOrExpandChildren(i))
+      .on('click', (_, i) => toggleTooltipLock(i))
       .on('mouseover', (_, i) => showTooltip(i))
       .on('mouseout', (_, i) => hideTooltip(i));
 

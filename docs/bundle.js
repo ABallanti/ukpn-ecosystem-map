@@ -1,3 +1,5 @@
+
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 (function () {
 	'use strict';
 
@@ -3796,6 +3798,10 @@
 	  }
 
 	  return [event.pageX, event.pageY];
+	}
+
+	function selectAll (selector) {
+	  return typeof selector === "string" ? new Selection$1([document.querySelectorAll(selector)], [document.documentElement]) : new Selection$1([array(selector)], root);
 	}
 
 	// These are typically used in conjunction with noevent to ensure that we can
@@ -7760,12 +7766,23 @@
 	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
 	  var tooltip = element.append('div').attr('class', 'tooltip empty');
 
+	  var clearSelections = function clearSelections() {
+	    return selectAll('#nodes > g').classed('selected', false);
+	  };
+
+	  var selectNode = function selectNode(id) {
+	    return select("#".concat(id)).classed('selected', true);
+	  };
+
 	  var showTooltip = function showTooltip(entity) {
+	    if (graph.locked) return;
 	    var _entity$data = entity.data,
 	        id = _entity$data.id,
 	        name = _entity$data.name,
 	        type = _entity$data.type,
 	        description = _entity$data.description;
+	    clearSelections();
+	    selectNode(id);
 	    var keyDataEntities = entity.descendants().filter(function (x) {
 	      return x.data.type === KEY_DATA_ENTITY;
 	    });
@@ -7787,15 +7804,22 @@
 	  };
 
 	  var setDefaultTooltipContent = function setDefaultTooltipContent() {
-	    var content = "\n      <article>\n      <h1>Instructions</h1>\n      <p>Hover over a node to show the metadata</p>\n      </article>\n    ";
+	    var content = "\n      <article>\n      <h1>Instructions</h1>\n      <p>\n        Hover over a node to show the metadata.\n        Click a node to lock the current selection.\n      </p>\n      </article>\n    ";
 	    tooltip.html(content);
 	  };
 
 	  setDefaultTooltipContent();
 
 	  var hideTooltip = function hideTooltip(entity) {
-	    tooltip.classed('empty', true);
+	    if (graph.locked) return;
+	    clearSelections();
 	    setDefaultTooltipContent();
+	  };
+
+	  var toggleTooltipLock = function toggleTooltipLock(entity) {
+	    if (graph.locked && graph.locked != entity.data.id) return;
+	    if (graph.locked) graph.locked = undefined;else graph.locked = entity.data.id;
+	    console.log(graph.locked);
 	  };
 
 	  function update() {
@@ -7817,34 +7841,15 @@
 	      return d.source.data.type;
 	    });
 
-	    function collapseOrExpandChildren(d) {
-	      if (!d.children) return; // if (!d3.event.defaultPrevented) {
-
-	      var inc = d.collapsed ? -1 : 1;
-	      recurse(d);
-
-	      function recurse(sourceNode) {
-	        //check if link is from this node, and if so, collapse
-	        allLinks.forEach(function (l) {
-	          if (l.source.id === sourceNode.id) {
-	            l.target.collapsing += inc;
-	            recurse(l.target);
-	          }
-	        });
-	      }
-
-	      d.collapsed = !d.collapsed; // }
-
-	      update();
-	    }
-
-	    var node = graph.append('g').attr('id', 'nodes').selectAll('g').data(nodes).join('g').attr('class', function (d) {
+	    var node = graph.append('g').attr('id', 'nodes').selectAll('g').data(nodes).join('g').attr('id', function (d) {
+	      return d.data.id;
+	    }).attr('class', function (d) {
 	      return d.data.type;
 	    });
 	    node.append('circle').classed('collapsed', function (d) {
 	      return d.collapsed;
 	    }).attr('r', 15).call(drag(simulation$1)).on('click', function (_, i) {
-	      return collapseOrExpandChildren(i);
+	      return toggleTooltipLock(i);
 	    }).on('mouseover', function (_, i) {
 	      return showTooltip(i);
 	    }).on('mouseout', function (_, i) {

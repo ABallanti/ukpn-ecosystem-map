@@ -8,6 +8,7 @@
   --tier-2-colour: hsl(22, 87%, 42%);
   --tier-3-colour: hsl(29, 93%, 44%);
   --tier-4-colour: hsl(36, 100%, 48%);
+  --selected-node-border: black;
 }
 * {
   padding: 0;
@@ -93,6 +94,10 @@ g, #nodes text {
 }
 #nodes circle {
   pointer-events: auto;
+}
+#nodes .selected circle {
+  stroke: var(--selected-node-border);
+  stroke-width: 5px;
 }
 #nodes .root {
   fill: var(--tier-1-colour);
