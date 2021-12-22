@@ -61,6 +61,11 @@ export const forceTree = (ecosystem, element) => {
         Hover over a node to show the metadata.
         Click a node to lock the current selection.
       </p>
+      <p>
+        You can zoom and pan using your pointing device or touch.
+        Double clicking / tapping will zoom and recentre the visualisation.
+        Pressing shift and double clicking will zoom out.
+      </p>
       </article>
     `;
     tooltip.html(content);
@@ -177,22 +182,22 @@ export const forceTree = (ecosystem, element) => {
     });
 
     node.append('title').text((d) => nodePath(d));
-  }
 
-  function zoomed({ transform }) {
-    graph.attr('transform', transform);
-  }
+    function zoomed({ transform }) {
+      graph.attr('transform', transform);
+    }
 
-  svg.call(
-    d3
-      .zoom()
-      .extent([
-        [0, 0],
-        [width, height],
-      ])
-      .scaleExtent([0.5, 4])
-      .on('zoom', zoomed)
-  );
+    svg.call(
+      d3
+        .zoom()
+        .extent([
+          [0, 0],
+          [width, height],
+        ])
+        .scaleExtent([0.5, 4])
+        .on('zoom', zoomed)
+    );
+  }
 
   const nodePath = (d) =>
     d

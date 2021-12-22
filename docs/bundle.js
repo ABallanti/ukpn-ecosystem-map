@@ -7808,7 +7808,7 @@
 	  };
 
 	  var setDefaultTooltipContent = function setDefaultTooltipContent() {
-	    var content = "\n      <article>\n      <h1>Instructions</h1>\n      <p>\n        Hover over a node to show the metadata.\n        Click a node to lock the current selection.\n      </p>\n      </article>\n    ";
+	    var content = "\n      <article>\n      <h1>Instructions</h1>\n      <p>\n        Hover over a node to show the metadata.\n        Click a node to lock the current selection.\n      </p>\n      <p>\n        You can zoom and pan using your pointing device or touch.\n        Double clicking / tapping will zoom and recentre the visualisation.\n        Pressing shift and double clicking will zoom out.\n      </p>\n      </article>\n    ";
 	    tooltip.html(content);
 	  };
 
@@ -7884,14 +7884,14 @@
 	    node.append('title').text(function (d) {
 	      return nodePath(d);
 	    });
-	  }
 
-	  function zoomed(_ref) {
-	    var transform = _ref.transform;
-	    graph.attr('transform', transform);
-	  }
+	    function zoomed(_ref) {
+	      var transform = _ref.transform;
+	      graph.attr('transform', transform);
+	    }
 
-	  svg.call(zoom().extent([[0, 0], [width, height]]).scaleExtent([0.5, 4]).on('zoom', zoomed));
+	    svg.call(zoom().extent([[0, 0], [width, height]]).scaleExtent([0.5, 4]).on('zoom', zoomed));
+	  }
 
 	  var nodePath = function nodePath(d) {
 	    return d.ancestors().map(function (d) {
