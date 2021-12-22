@@ -1,26 +1,56 @@
-id,parent,name,type,description
-ukpn,,UKPN,root,
-asset,ukpn,Asset,domain,
-network,ukpn,Network,domain,
-asset-register,asset,Asset Register,data-class,
-characteristics,asset-register,Characteristics,critical-data-entity,
-attribution,asset-register,Attribution,critical-data-entity,
-measurements,asset-register,Measurements,critical-data-entity,
-condition,asset-register,Condition,critical-data-entity,
-defects,asset-register,Defects,critical-data-entity,
-geospatial,network,Geospatial,data-class,
-sites,geospatial,Sites,critical-data-entity,
-circuits,geospatial,Circuits,critical-data-entity,
-location,geospatial,Location,critical-data-entity,
-connectivity,geospatial,Connectivity,critical-data-entity,
-operational,network,Operational,data-class,
-scada,operational,SCADA,critical-data-entity,
-faults,operational,Faults,critical-data-entity,
-time-series,network,Time Series,data-class,
-xxx,time-series,xxx,critical-data-entity,
-capacity,network,Capacity,data-class,
-load-capacity,capacity,Load Capacity,critical-data-entity,
-generation-capacity,capacity,Generation Capacity,critical-data-entity,
-load-indices,capacity,Load Indices,critical-data-entity,
-utilisation,network,Utilisation,data-class,
-maximum-demand,utilisation,Maximum Demand,critical-data-entity,
+id,parent,type,name,description,published
+root,,root,UK Power networks,,
+asset,root,domain,Asset,"Asset domain holds data about UKPN's physical network assets, their condition and status. Asset data is structured and  transaction based. It is mostly static as it changes infrequently.",
+customer,root,domain,Customer,"Customer domain holds data about UKPN customers. We obtain customer data via services we provide and use it to deliver ongoing services to our customers.   Customer data is a variety of structured and unstructured data.",
+environmental-management,root,domain,Environmental management,"Environmental management domain holds data about UKPN environmental management, impact and performance processes.  Environmental data is a mixture of structured and unstructured data.",
+finance,root,domain,Finance,"Finance domain holds data about UKPN financial assets and business performance, used in financial management processes.   Finance data is predominantly structured transactional data.",
+hr,root,domain,HR,"Human Resources (HR) domain holds data about UKPN employees, used in human capital management processes.  HR data is a mixture of structured and unstructured data.",
+it,root,domain,IT,"IT domain holds data about UKPN's IT assets, their design, configuration, utilisation and management. IT data is structured and  transaction based. It is mostly static as it changes infrequently.",
+legal,root,domain,Legal,"Legal domain holds data about UKPN legal, contracting and insurance practices. Legal data is  predominantly unstructured data.",
+network,root,domain,Network,"Network domain holds data UKPN uses to define how the distribution network assets are configured and utilised against design parameters.  Network data is structured, semi-dynamic and largely contextual.",
+operation,root,domain,Operation,"Operation domain holds data that defines the real-time status, configuration and associated operational activity of the distribution network.  Operation data is structured,  transactional and dynamic.",
+procurement,root,domain,Procurement,"Procurement domain holds data about UKPN sourcing and purchasing activities. Procurement data is a mixture of structured and unstructured data.",
+safety-management,root,domain,Safety management,"Safety management domain holds data about UKPN health and safety management and performance processes.  Safety management data is predominantly structured data.",
+asset-performance,asset,data-class,Asset performance,"Data about the measured outputs of an asset.",
+characteristic,asset,data-class,Characteristic,"Data about an Asset's specification details. Defines the physical features, design parameters or identifies an Asset.",
+classification,asset,data-class,Classification,"Data about an Asset's logical grouping based on asset type.",
+condition,asset,data-class,Condition,"Data about the physical state of an asset.",
+geospatial,asset,data-class,Geospatial,"Data about the physical location of an asset.",
+status,asset,data-class,Status,"Data about the current or past situation within the asset's lifecycle.",
+work-activity,asset,data-class,Work activity,"Data about a past, present or future work activity UKPN carries out on an asset.",
+network-type,network,data-class,Network type,"Data about a Distribution Network's  physical characteristics and relative position within the broader Distribution System.",
+network-configuration,network,data-class,Network configuration,"Data about a Distribution Network's  topology and status, defined at a specific point in time.",
+network-performance,network,data-class,Network performance,"Data about a Distribution Network's short, medium and long-term performance,  measured against defined industry standards.",
+network-capacity,network,data-class,Network capacity,"Data about a Distribution Network's ability to safely distribute electrical power in relation to clearly defined environmental scenarios.",
+network-usage,network,data-class,Network usage,"Data about network usage relative to its designed capacity at a point in time.",
+design-voltage,classification,key-data-entity,Design Voltage,,Y
+construction,classification,key-data-entity,Construction,,N
+manufacturer,characteristic,key-data-entity,Manufacturer,,N
+model,characteristic,key-data-entity,Model,,N
+serialnumber,characteristic,key-data-entity,Serial Number,,N
+operating-voltage,characteristic,key-data-entity,Operating Voltage,,Y
+rating,characteristic,key-data-entity,Rating,,Y
+commissioning-status,status,key-data-entity,Commissioning Status,,N
+defect,condition,key-data-entity,Defect,,N
+esqcr-rating,condition,key-data-entity,ESQCR Rating,,N
+health-index,condition,key-data-entity,Health Index,,N
+reliability,asset-performance,key-data-entity,Reliability,,N
+work-order,work-activity,key-data-entity,Work Order,,N
+labour,work-activity,key-data-entity,Labour,,N
+material,work-activity,key-data-entity,Material,,N
+cost,work-activity,key-data-entity,Cost,,N
+topology,geospatial,key-data-entity,Topology,,Y
+location,geospatial,key-data-entity,Location,,Y
+overhead-underground,network-type,key-data-entity,Overhead / Underground,,Y
+operating-voltage,network-type,key-data-entity,Operating Voltage,,Y
+network-status,network-configuration,key-data-entity,Network Status,,N
+planned-outages,network-configuration,key-data-entity,Planned Outages,,N
+unplanned-outages,network-configuration,key-data-entity,Unplanned Outages,,Y
+normal-running-arrangement,network-configuration,key-data-entity,Normal Running Arrangement,,Y
+current-running-arrangement,network-configuration,key-data-entity,Current Running Arrangement,,N
+power-quality,network-performance,key-data-entity,Power Quality,,N
+network-losses,network-performance,key-data-entity,Network Losses,,N
+rating,network-capacity,key-data-entity,Rating,,Y
+reverse-power-rating,network-capacity,key-data-entity,Reverse Power Rating,,Y
+demand,network-usage,key-data-entity,Demand,,Y
+generation,network-usage,key-data-entity,Generation,,Y
