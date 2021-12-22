@@ -1,8 +1,9 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
 
-const sparseness = 1500;
-const linkLength = 25;
+const sparseness = 1000;
+const linkLength = 100;
+const linkStrength = 2;
 
 const KEY_DATA_ENTITY = 'key-data-entity';
 
@@ -130,7 +131,7 @@ export const forceTree = (ecosystem, element) => {
           .forceLink(links)
           .id((d) => d.id)
           .distance(linkLength)
-          .strength(1)
+          .strength(linkStrength)
       )
       .force('charge', d3.forceManyBody().strength(-sparseness))
       .force('x', d3.forceX())

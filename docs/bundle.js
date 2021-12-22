@@ -7743,8 +7743,9 @@
 	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 	};
 
-	var sparseness = 1500;
-	var linkLength = 25;
+	var sparseness = 1000;
+	var linkLength = 100;
+	var linkStrength = 2;
 	var KEY_DATA_ENTITY = 'key-data-entity'; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 
 	var forceTree = function forceTree(ecosystem, element) {
@@ -7844,7 +7845,7 @@
 	    });
 	    var simulation$1 = simulation(nodes).velocityDecay(0.4).force('link', link(links).id(function (d) {
 	      return d.id;
-	    }).distance(linkLength).strength(1)).force('charge', manyBody().strength(-sparseness)).force('x', x()).force('y', y());
+	    }).distance(linkLength).strength(linkStrength)).force('charge', manyBody().strength(-sparseness)).force('x', x()).force('y', y());
 	    var link$1 = graph.append('g').attr('id', 'edges').selectAll('line').data(links).join('line').attr('class', function (d) {
 	      return d.source.data.type;
 	    });
