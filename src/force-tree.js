@@ -105,15 +105,10 @@ export const forceTree = (ecosystem, element) => {
       .join('g')
       .attr('class', (d) => d.data.type);
 
-    const rectWidth = 100;
-    const rectHeight = rectWidth / 3;
     node
-      .append('rect')
-      .classed('collapsed', (d) => d.collapsed)
-      .attr('transform', `translate(${-rectWidth / 2} ${-rectHeight / 2})`)
-      .attr('width', rectWidth)
-      .attr('height', rectHeight)
-      .attr('rx', 5)
+      .append('circle')
+      .classed('collapsed', d => d.collapsed)
+      .attr('r', 15)
       .call(drag(simulation))
       .on('click', (_, i) => collapseOrExpandChildren(i))
       .on('mouseover', (_, i) => showTooltip(i))
@@ -121,8 +116,9 @@ export const forceTree = (ecosystem, element) => {
 
     node
       .append('text')
-      .attr('text-anchor', 'middle')
-      // .attr('x', 0)
+      .attr('text-anchor', 'right')
+      .attr('dominant-baseline', 'middle')
+      .attr('x', 20)
       // .attr('y', 0)
       // .attr('textLength', 20)
       .text((d) => {

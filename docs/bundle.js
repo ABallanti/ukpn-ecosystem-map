@@ -7830,19 +7830,16 @@
 	    var node = graph.append('g').attr('id', 'nodes').selectAll('g').data(nodes).join('g').attr('class', function (d) {
 	      return d.data.type;
 	    });
-	    var rectWidth = 100;
-	    var rectHeight = rectWidth / 3;
-	    node.append('rect').classed('collapsed', function (d) {
+	    node.append('circle').classed('collapsed', function (d) {
 	      return d.collapsed;
-	    }).attr('transform', "translate(".concat(-rectWidth / 2, " ").concat(-rectHeight / 2, ")")).attr('width', rectWidth).attr('height', rectHeight).attr('rx', 5).call(drag(simulation$1)).on('click', function (_, i) {
+	    }).attr('r', 15).call(drag(simulation$1)).on('click', function (_, i) {
 	      return collapseOrExpandChildren(i);
 	    }).on('mouseover', function (_, i) {
 	      return showTooltip(i);
 	    }).on('mouseout', function (_, i) {
 	      return hideTooltip();
 	    });
-	    node.append('text').attr('text-anchor', 'middle') // .attr('x', 0)
-	    // .attr('y', 0)
+	    node.append('text').attr('text-anchor', 'right').attr('dominant-baseline', 'middle').attr('x', 20) // .attr('y', 0)
 	    // .attr('textLength', 20)
 	    .text(function (d) {
 	      console.dir(d.data);
