@@ -7779,7 +7779,7 @@
 	  };
 
 	  var showTooltip = function showTooltip(entity) {
-	    if (graph.locked) return;
+	    if (graph.locked && graph.locked !== entity.data.id) return;
 	    var _entity$data = entity.data,
 	        id = _entity$data.id,
 	        name = _entity$data.name,
@@ -7821,9 +7821,13 @@
 	  };
 
 	  var toggleTooltipLock = function toggleTooltipLock(entity) {
-	    if (graph.locked && graph.locked != entity.data.id) return;
+	    if (graph.locked && graph.locked !== entity.data.id) {
+	      graph.locked = entity.data.id;
+	      showTooltip(entity);
+	      return;
+	    }
+
 	    if (graph.locked) graph.locked = undefined;else graph.locked = entity.data.id;
-	    console.log(graph.locked);
 	  };
 
 	  function update() {

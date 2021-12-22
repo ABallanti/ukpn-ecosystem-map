@@ -28,7 +28,7 @@ export const forceTree = (ecosystem, element) => {
   const clearSelections = () => d3.selectAll('#nodes > g').classed('selected', false);
   const selectNode = (id) => d3.select(`#${id}`).classed('selected', true);
   const showTooltip = (entity) => {
-    if (graph.locked) return;
+    if (graph.locked && graph.locked !== entity.data.id) return;
     const { id, name, type, description } = entity.data;
     clearSelections();
     selectNode(id);
@@ -74,12 +74,13 @@ export const forceTree = (ecosystem, element) => {
   };
 
   const toggleTooltipLock = (entity) => {
-    if (graph.locked && graph.locked != entity.data.id) return;
-
+    if (graph.locked && graph.locked !== entity.data.id) {
+      graph.locked = entity.data.id;
+      showTooltip(entity);
+      return;
+    }
     if (graph.locked) graph.locked = undefined;
     else graph.locked = entity.data.id;
-
-    console.log(graph.locked);
   }
 
   function collapseOrExpandChildren(d) {
