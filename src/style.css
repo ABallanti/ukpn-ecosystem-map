@@ -90,16 +90,12 @@ main section h1 {
 }
 
 /* Graph */
-g, #nodes text {
+g, #labels text {
   pointer-events: none;
 }
 #nodes {
   fill: hsl(0, 0%, 25%);
   stroke: none;
-}
-#nodes text {
-  font-size: 0.8rem;
-  fill: var(--graph-text-color);
 }
 #nodes circle {
   pointer-events: auto;
@@ -124,11 +120,18 @@ g, #nodes text {
   stroke-width: 5px;
   stroke: #444;
 }
+
 #edges {
   stroke: #999;
   stroke-opacity: 0.6;
   stroke-width: 3px;
 }
+
+#labels text {
+  font-size: 0.8rem;
+  fill: var(--graph-text-color);
+}
+
 /* Tag cloud */
 .tag-cloud {
   list-style: none;

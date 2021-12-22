@@ -163,7 +163,11 @@ export const forceTree = (ecosystem, element) => {
       .on('mouseover', (_, i) => showTooltip(i))
       .on('mouseout', (_, i) => hideTooltip(i));
 
-    node
+    const label = graph.append('g').attr('id', 'labels').data(nodes).selectAll('g')
+      .data(nodes)
+      .join('g');
+
+    label
       .append('text')
       .attr('text-anchor', 'right')
       .attr('dominant-baseline', 'middle')
@@ -182,6 +186,7 @@ export const forceTree = (ecosystem, element) => {
         .attr('y2', (d) => d.target.y);
 
       node.attr('transform', (d) => `translate(${d.x} ${d.y})`);
+      label.attr('transform', (d) => `translate(${d.x} ${d.y})`);
     });
 
     node.append('title').text((d) => nodePath(d));

@@ -7863,7 +7863,8 @@
 	    }).on('mouseout', function (_, i) {
 	      return hideTooltip();
 	    });
-	    node.append('text').attr('text-anchor', 'right').attr('dominant-baseline', 'middle').attr('x', 20) // .attr('y', 0)
+	    var label = graph.append('g').attr('id', 'labels').data(nodes).selectAll('g').data(nodes).join('g');
+	    label.append('text').attr('text-anchor', 'right').attr('dominant-baseline', 'middle').attr('x', 20) // .attr('y', 0)
 	    // .attr('textLength', 20)
 	    .text(function (d) {
 	      return d.data.name;
@@ -7879,6 +7880,9 @@
 	        return d.target.y;
 	      });
 	      node.attr('transform', function (d) {
+	        return "translate(".concat(d.x, " ").concat(d.y, ")");
+	      });
+	      label.attr('transform', function (d) {
 	        return "translate(".concat(d.x, " ").concat(d.y, ")");
 	      });
 	    });
