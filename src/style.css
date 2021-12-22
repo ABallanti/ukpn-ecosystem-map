@@ -2,16 +2,21 @@
   --font-stack: sans-serif;
   --background: hsl(0, 0%, 100%);
   --graph-background: var(--background);
+  --tooltip-background: hsl(0, 15%, 65%);
   --graph-text-color: #222;
-  --tier-1-colour: #9E151A;
-  --tier-2-colour: #C6500E;
-  --tier-3-colour: #DA6D08;
-  --tier-4-colour: #F39200;
+  --tier-1-colour: hsl(358, 77%, 35%);
+  --tier-2-colour: hsl(22, 87%, 42%);
+  --tier-3-colour: hsl(29, 93%, 44%);
+  --tier-4-colour: hsl(36, 100%, 48%);
 }
 * {
   padding: 0;
   margin: 0;
   font-size: 1em;
+}
+
+h1, h2, p, ul {
+  padding-bottom: 0.5em;
 }
 
 html {
@@ -61,22 +66,17 @@ main section h1 {
   background: var(--graph-background);
   overflow: hidden;
   position: relative;
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
+  display: flex;
+  max-height: 800px;
 }
 
 /* Tooltip */
 .tooltip {
-  background-color: red;
+  background-color: var(--tooltip-background);
   padding: 1em;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-.tooltip.hide {
-  display: none;
+  position: relative;
+  width: 20em;
+  box-sizing: border-box;
 }
 
 /* Graph */
@@ -115,11 +115,17 @@ g, #nodes text {
   stroke-opacity: 0.6;
   stroke-width: 3px;
 }
-
-table {
-  border-collapse: collapse;
+/* Tag cloud */
+.tag-cloud {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
 }
-.tooltip th, .tooltip td {
-  border: 1px solid #444;
-  padding: 0.5em;
+.tag-cloud li {
+  font-size: 0.8em;
+  color: var(--tier-1-colour);
+  background: var(--tier-4-colour);
+  border-radius: 1em;
+  padding: 0.2em 0.6em;
 }

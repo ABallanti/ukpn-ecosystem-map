@@ -2550,26 +2550,6 @@
 	  });
 	}
 
-	var $$5 = _export;
-	var uncurryThis$1 = functionUncurryThis;
-	var IndexedObject = indexedObject;
-	var toIndexedObject = toIndexedObject$7;
-	var arrayMethodIsStrict = arrayMethodIsStrict$2;
-	var un$Join = uncurryThis$1([].join);
-	var ES3_STRINGS = IndexedObject != Object;
-	var STRICT_METHOD = arrayMethodIsStrict('join', ','); // `Array.prototype.join` method
-	// https://tc39.es/ecma262/#sec-array.prototype.join
-
-	$$5({
-	  target: 'Array',
-	  proto: true,
-	  forced: ES3_STRINGS || !STRICT_METHOD
-	}, {
-	  join: function join(separator) {
-	    return un$Join(toIndexedObject(this), separator === undefined ? ',' : separator);
-	  }
-	});
-
 	var toPropertyKey = toPropertyKey$4;
 	var definePropertyModule = objectDefineProperty;
 	var createPropertyDescriptor = createPropertyDescriptor$4;
@@ -2579,7 +2559,7 @@
 	  if (propertyKey in object) definePropertyModule.f(object, propertyKey, createPropertyDescriptor(0, value));else object[propertyKey] = value;
 	};
 
-	var $$4 = _export;
+	var $$5 = _export;
 	var global$1 = global$A;
 	var fails = fails$d;
 	var isArray$1 = isArray$4;
@@ -2615,7 +2595,7 @@
 	// https://tc39.es/ecma262/#sec-array.prototype.concat
 	// with adding support of @@isConcatSpreadable and @@species
 
-	$$4({
+	$$5({
 	  target: 'Array',
 	  proto: true,
 	  forced: FORCED
@@ -2646,35 +2626,34 @@
 	  }
 	});
 
-	var $$3 = _export;
-	var uncurryThis = functionUncurryThis;
-	var isArray = isArray$4;
-	var un$Reverse = uncurryThis([].reverse);
-	var test = [1, 2]; // `Array.prototype.reverse` method
-	// https://tc39.es/ecma262/#sec-array.prototype.reverse
-	// fix for Safari 12.0 bug
-	// https://bugs.webkit.org/show_bug.cgi?id=188794
+	var $$4 = _export;
+	var uncurryThis$1 = functionUncurryThis;
+	var IndexedObject = indexedObject;
+	var toIndexedObject = toIndexedObject$7;
+	var arrayMethodIsStrict = arrayMethodIsStrict$2;
+	var un$Join = uncurryThis$1([].join);
+	var ES3_STRINGS = IndexedObject != Object;
+	var STRICT_METHOD = arrayMethodIsStrict('join', ','); // `Array.prototype.join` method
+	// https://tc39.es/ecma262/#sec-array.prototype.join
 
-	$$3({
+	$$4({
 	  target: 'Array',
 	  proto: true,
-	  forced: String(test) === String(test.reverse())
+	  forced: ES3_STRINGS || !STRICT_METHOD
 	}, {
-	  reverse: function reverse() {
-	    // eslint-disable-next-line no-self-assign -- dirty hack
-	    if (isArray(this)) this.length = this.length;
-	    return un$Reverse(this);
+	  join: function join(separator) {
+	    return un$Join(toIndexedObject(this), separator === undefined ? ',' : separator);
 	  }
 	});
 
-	var $$2 = _export;
+	var $$3 = _export;
 	var $map = arrayIteration.map;
 	var arrayMethodHasSpeciesSupport = arrayMethodHasSpeciesSupport$3;
 	var HAS_SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('map'); // `Array.prototype.map` method
 	// https://tc39.es/ecma262/#sec-array.prototype.map
 	// with adding support of @@species
 
-	$$2({
+	$$3({
 	  target: 'Array',
 	  proto: true,
 	  forced: !HAS_SPECIES_SUPPORT
@@ -2686,7 +2665,7 @@
 	  }
 	});
 
-	var $$1 = _export;
+	var $$2 = _export;
 	var apply$1 = functionApply;
 	var aCallable$1 = aCallable$a;
 	var anObject$1 = anObject$h;
@@ -2711,7 +2690,7 @@
 	    });
 	  });
 	});
-	$$1({
+	$$2({
 	  target: 'AsyncIterator',
 	  proto: true,
 	  real: true
@@ -2724,7 +2703,7 @@
 	  }
 	});
 
-	var $ = _export;
+	var $$1 = _export;
 	var apply = functionApply;
 	var aCallable = aCallable$a;
 	var anObject = anObject$h;
@@ -2736,7 +2715,7 @@
 	  var done = this.done = !!result.done;
 	  if (!done) return callWithSafeIterationClosing(iterator, this.mapper, result.value);
 	});
-	$({
+	$$1({
 	  target: 'Iterator',
 	  proto: true,
 	  real: true
@@ -2746,6 +2725,27 @@
 	      iterator: anObject(this),
 	      mapper: aCallable(mapper)
 	    });
+	  }
+	});
+
+	var $ = _export;
+	var uncurryThis = functionUncurryThis;
+	var isArray = isArray$4;
+	var un$Reverse = uncurryThis([].reverse);
+	var test = [1, 2]; // `Array.prototype.reverse` method
+	// https://tc39.es/ecma262/#sec-array.prototype.reverse
+	// fix for Safari 12.0 bug
+	// https://bugs.webkit.org/show_bug.cgi?id=188794
+
+	$({
+	  target: 'Array',
+	  proto: true,
+	  forced: String(test) === String(test.reverse())
+	}, {
+	  reverse: function reverse() {
+	    // eslint-disable-next-line no-self-assign -- dirty hack
+	    if (isArray(this)) this.length = this.length;
+	    return un$Reverse(this);
 	  }
 	});
 
@@ -7739,7 +7739,8 @@
 	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 	};
 
-	var sparseness = 2000; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
+	var sparseness = 2000;
+	var KEY_DATA_ENTITY = 'key-data-entity'; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 
 	var forceTree = function forceTree(ecosystem, element) {
 	  var width = 1000;
@@ -7757,7 +7758,7 @@
 	    return d.depth > minDepth;
 	  });
 	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
-	  var tooltip = element.append('div').attr('class', 'tooltip hide');
+	  var tooltip = element.append('div').attr('class', 'tooltip empty');
 
 	  var showTooltip = function showTooltip(entity) {
 	    var _entity$data = entity.data,
@@ -7765,26 +7766,36 @@
 	        name = _entity$data.name,
 	        type = _entity$data.type,
 	        description = _entity$data.description;
+	    var keyDataEntities = entity.descendants().filter(function (x) {
+	      return x.data.type === KEY_DATA_ENTITY;
+	    });
 
-	    var row = function row() {
-	      for (var _len = arguments.length, content = new Array(_len), _key = 0; _key < _len; _key++) {
-	        content[_key] = arguments[_key];
-	      }
-
-	      return "<tr>".concat(content.join(''), "</tr>");
+	    var listKeyDataEntities = function listKeyDataEntities(list, heading) {
+	      if (list.length < 1) return '';
+	      return "<h2>".concat(heading, "</h2>\n      <ul class='tag-cloud'>\n        ").concat(list.map(function (x) {
+	        return "<li>".concat(x.data.name, "</li>");
+	      }).join(''), "\n      </ul>");
 	    };
 
-	    var kv = function kv(label, value, scale) {
-	      return "<th>".concat(label, "</th><td ").concat(scale ? ' colspan=' + scale : '', ">").concat(value, "</td>");
-	    };
-
-	    var content = "\n      <table>\n        ".concat(row(kv('Name', name || id), kv('Type', type)), "\n        ").concat(row(kv('Path', nodePath(entity), 3)), "\n        ").concat(row(kv('Description', description, 3)), "\n      </table>\n    ");
-	    tooltip.classed('hide', false);
+	    var content = "\n      <article>\n        <h1>".concat(name || id, " (<em>").concat(type, "</em>)</h1>\n        <p>").concat(description, "</p>\n        ").concat(listKeyDataEntities(keyDataEntities.filter(function (x) {
+	      return x.data.published === 'Y';
+	    }), 'Published Key Data Entities'), "\n        ").concat(listKeyDataEntities(keyDataEntities.filter(function (x) {
+	      return x.data.published === 'N';
+	    }), 'Unpublished Key Data Entities'), "\n      </article>\n    ");
+	    tooltip.classed('empty', false);
 	    tooltip.html(content);
 	  };
 
+	  var setDefaultTooltipContent = function setDefaultTooltipContent() {
+	    var content = "\n      <article>\n      <h1>Instructions</h1>\n      <p>Hover over a node to show the metadata</p>\n      </article>\n    ";
+	    tooltip.html(content);
+	  };
+
+	  setDefaultTooltipContent();
+
 	  var hideTooltip = function hideTooltip(entity) {
-	    tooltip.classed('hide', true);
+	    tooltip.classed('empty', true);
+	    setDefaultTooltipContent();
 	  };
 
 	  function update() {

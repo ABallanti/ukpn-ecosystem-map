@@ -3,6 +3,8 @@ import { drag } from './components/drag';
 
 const sparseness = 2000;
 
+const KEY_DATA_ENTITY = 'key-data-entity';
+
 // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 export const forceTree = (ecosystem, element) => {
   const width = 1000;
@@ -20,27 +22,45 @@ export const forceTree = (ecosystem, element) => {
     .append('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
-  const tooltip = element.append('div').attr('class', 'tooltip hide');
+  const tooltip = element.append('div').attr('class', 'tooltip empty');
 
   const showTooltip = (entity) => {
     const { id, name, type, description } = entity.data;
-    const row = (...content) => `<tr>${content.join('')}</tr>`;
-    const kv = (label, value, scale) =>
-      `<th>${label}</th><td ${scale ? ' colspan=' + scale : ''}>${value}</td>`;
-
+    
+    const keyDataEntities = entity.descendants().filter(x => x.data.type === KEY_DATA_ENTITY);
+    const listKeyDataEntities = (list, heading) => {
+      if (list.length < 1) return '';
+      return `<h2>${ heading }</h2>
+      <ul class='tag-cloud'>
+        ${list.map(x => `<li>${x.data.name}</li>`).join('')}
+      </ul>`
+    }
     const content = `
-      <table>
-        ${row(kv('Name', name || id), kv('Type', type))}
-        ${row(kv('Path', nodePath(entity), 3))}
-        ${row(kv('Description', description, 3))}
-      </table>
+      <article>
+        <h1>${name || id} (<em>${type}</em>)</h1>
+        <p>${description}</p>
+        ${listKeyDataEntities(keyDataEntities.filter(x => x.data.published === 'Y'), 'Published Key Data Entities')}
+        ${listKeyDataEntities(keyDataEntities.filter(x => x.data.published === 'N'), 'Unpublished Key Data Entities')}
+      </article>
     `;
-    tooltip.classed('hide', false);
+    tooltip.classed('empty', false);
     tooltip.html(content);
   };
 
+  const setDefaultTooltipContent = () => {
+    const content = `
+      <article>
+      <h1>Instructions</h1>
+      <p>Hover over a node to show the metadata</p>
+      </article>
+    `;
+    tooltip.html(content);
+  }
+  setDefaultTooltipContent();
+
   const hideTooltip = (entity) => {
-    tooltip.classed('hide', true);
+    tooltip.classed('empty', true);
+    setDefaultTooltipContent();
   };
 
   function update() {
