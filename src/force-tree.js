@@ -1,7 +1,8 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
 
-const sparseness = 2000;
+const sparseness = 1500;
+const linkLength = 25;
 
 const KEY_DATA_ENTITY = 'key-data-entity';
 
@@ -15,8 +16,9 @@ export const forceTree = (ecosystem, element) => {
     d.collapsing = 0;
     d.collapsed = false;
   });
-  const allLinks = ecosystem.links().filter((d) => d.source.depth > minDepth);
-  const allNodes = ecosystem.descendants().filter((d) => d.depth > minDepth);
+  const isExcluded = (d) => d.data.type === KEY_DATA_ENTITY;
+  const allLinks = ecosystem.links().filter((d) => d.source.depth > minDepth && !isExcluded(d.source) && !isExcluded(d.target));
+  const allNodes = ecosystem.descendants().filter((d) => d.depth > minDepth && !isExcluded(d));
 
   const svg = element
     .append('svg')
@@ -80,6 +82,27 @@ export const forceTree = (ecosystem, element) => {
     console.log(graph.locked);
   }
 
+  function collapseOrExpandChildren(d) {
+    if (!d.children) return;
+
+    // if (!d3.event.defaultPrevented) {
+    const inc = d.collapsed ? -1 : 1;
+    recurse(d);
+
+    function recurse(sourceNode) {
+      //check if link is from this node, and if so, collapse
+      allLinks.forEach(function (l) {
+        if (l.source.id === sourceNode.id) {
+          l.target.collapsing += inc;
+          recurse(l.target);
+        }
+      });
+    }
+    d.collapsed = !d.collapsed;
+    // }
+    update();
+  }
+
   function update() {
     svg.select('#graph').remove();
     const graph = svg.append('g').attr('id', 'graph');
@@ -98,7 +121,7 @@ export const forceTree = (ecosystem, element) => {
         d3
           .forceLink(links)
           .id((d) => d.id)
-          .distance(0)
+          .distance(linkLength)
           .strength(1)
       )
       .force('charge', d3.forceManyBody().strength(-sparseness))
@@ -112,27 +135,6 @@ export const forceTree = (ecosystem, element) => {
       .data(links)
       .join('line')
       .attr('class', (d) => d.source.data.type);
-
-    function collapseOrExpandChildren(d) {
-      if (!d.children) return;
-
-      // if (!d3.event.defaultPrevented) {
-      const inc = d.collapsed ? -1 : 1;
-      recurse(d);
-
-      function recurse(sourceNode) {
-        //check if link is from this node, and if so, collapse
-        allLinks.forEach(function (l) {
-          if (l.source.id === sourceNode.id) {
-            l.target.collapsing += inc;
-            recurse(l.target);
-          }
-        });
-      }
-      d.collapsed = !d.collapsed;
-      // }
-      update();
-    }
 
     const node = graph
       .append('g')

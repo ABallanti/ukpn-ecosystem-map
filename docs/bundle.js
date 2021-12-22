@@ -7743,7 +7743,8 @@
 	  return d3drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 	};
 
-	var sparseness = 2000;
+	var sparseness = 1500;
+	var linkLength = 25;
 	var KEY_DATA_ENTITY = 'key-data-entity'; // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
 
 	var forceTree = function forceTree(ecosystem, element) {
@@ -7755,11 +7756,16 @@
 	    d.collapsing = 0;
 	    d.collapsed = false;
 	  });
+
+	  var isExcluded = function isExcluded(d) {
+	    return d.data.type === KEY_DATA_ENTITY;
+	  };
+
 	  var allLinks = ecosystem.links().filter(function (d) {
-	    return d.source.depth > minDepth;
+	    return d.source.depth > minDepth && !isExcluded(d.source) && !isExcluded(d.target);
 	  });
 	  var allNodes = ecosystem.descendants().filter(function (d) {
-	    return d.depth > minDepth;
+	    return d.depth > minDepth && !isExcluded(d);
 	  });
 	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
 	  var tooltip = element.append('div').attr('class', 'tooltip empty');
@@ -7834,11 +7840,10 @@
 	    });
 	    var simulation$1 = simulation(nodes).velocityDecay(0.4).force('link', link(links).id(function (d) {
 	      return d.id;
-	    }).distance(0).strength(1)).force('charge', manyBody().strength(-sparseness)).force('x', x()).force('y', y());
+	    }).distance(linkLength).strength(1)).force('charge', manyBody().strength(-sparseness)).force('x', x()).force('y', y());
 	    var link$1 = graph.append('g').attr('id', 'edges').selectAll('line').data(links).join('line').attr('class', function (d) {
 	      return d.source.data.type;
 	    });
-
 	    var node = graph.append('g').attr('id', 'nodes').selectAll('g').data(nodes).join('g').attr('id', function (d) {
 	      return d.data.id;
 	    }).attr('class', function (d) {
