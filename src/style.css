@@ -1,8 +1,12 @@
 :root {
   --font-stack: sans-serif;
   --background: hsl(0, 0%, 100%);
-  --graph-background: hsl(140, 10%, 15%);
-  --graph-text-color: hsl(140, 60%, 80%);
+  --graph-background: var(--background);
+  --graph-text-color: #222;
+  --tier-1-colour: #9E151A;
+  --tier-2-colour: #C6500E;
+  --tier-3-colour: #DA6D08;
+  --tier-4-colour: #F39200;
 }
 * {
   padding: 0;
@@ -80,31 +84,31 @@ g, #nodes text {
   pointer-events: none;
 }
 #nodes {
-  stroke: hsl(0, 0%, 10%);
   fill: hsl(0, 0%, 25%);
-  stroke-width: 5px;
+  stroke: none;
 }
 #nodes text {
   font-size: 0.8rem;
-  stroke: none;
   fill: var(--graph-text-color);
 }
 #nodes circle {
   pointer-events: auto;
 }
-
+#nodes .root {
+  fill: var(--tier-1-colour);
+}
 #nodes .domain {
-  fill: yellow;
+  fill: var(--tier-2-colour);
 }
 #nodes .data-class {
-  fill: blue;
+  fill: var(--tier-3-colour);
 }
-#nodes .critical-data-entity {
-  fill: green;
+#nodes .key-data-entity {
+  fill: var(--tier-4-colour);
 }
 #nodes .collapsed {
-  stroke-width: 10px;
-  stroke: #999;
+  stroke-width: 5px;
+  stroke: #444;
 }
 #edges {
   stroke: #999;
