@@ -7767,7 +7767,7 @@
 	  var allNodes = ecosystem.descendants().filter(function (d) {
 	    return d.depth > minDepth && !isExcluded(d);
 	  });
-	  var svg = element.append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
+	  var svg = element.append('div').attr('id', 'visualisation').append('svg').attr('viewBox', [-width / 2, -height / 2, width, height]);
 	  var tooltip = element.append('div').attr('class', 'tooltip empty');
 
 	  var clearSelections = function clearSelections() {

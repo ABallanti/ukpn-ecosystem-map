@@ -51,6 +51,7 @@ export default {
     dev &&
       serve({
         contentBase: 'docs',
+        host: '0.0.0.0',
         open: true,
       }),
     dev &&

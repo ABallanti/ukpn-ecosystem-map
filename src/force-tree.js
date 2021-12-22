@@ -21,6 +21,8 @@ export const forceTree = (ecosystem, element) => {
   const allNodes = ecosystem.descendants().filter((d) => d.depth > minDepth && !isExcluded(d));
 
   const svg = element
+    .append('div')
+    .attr('id', 'visualisation')
     .append('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 

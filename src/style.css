@@ -63,12 +63,21 @@ main section h1 {
   font-size: 2em;
 }
 
-.graph {
+#tree {
   background: var(--graph-background);
   overflow: hidden;
   position: relative;
   display: flex;
   max-height: 800px;
+}
+
+#visualisation {
+  flex-grow: 2;
+}
+
+#visualisation svg {
+  height: 100%;
+  width: 100%;
 }
 
 /* Tooltip */
