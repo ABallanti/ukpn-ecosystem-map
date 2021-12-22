@@ -10,6 +10,18 @@ import autoprefixer from 'autoprefixer';
 
 const dev = process.env.NODE_ENV === 'development';
 
+const output = [
+  {
+    file: 'docs/bundle.js',
+    format: 'iife',
+  },
+  !dev && {
+    file: 'docs/bundle.min.js',
+    format: 'iife',
+    plugins: [terser()],
+  },
+].filter(x => x);
+
 export default {
   onwarn: function (warning, warn) {
     const modulesWithCircularDependencies = ['d3-selection', 'd3-interpolate', 'd3-transition'];
@@ -21,6 +33,7 @@ export default {
     warn(warning);
   },
   input: 'src/main.js',
+  output,
   plugins: [
     resolve(),
     commonjs(),
@@ -43,18 +56,7 @@ export default {
     dev &&
       livereload({
         watch: 'docs',
-        delay: 1000,
+        delay: 2000,
       }),
-  ],
-  output: [
-    {
-      file: 'docs/bundle.js',
-      format: 'iife',
-    },
-    {
-      file: 'docs/bundle.min.js',
-      format: 'iife',
-      plugins: [terser()],
-    },
   ],
 };
