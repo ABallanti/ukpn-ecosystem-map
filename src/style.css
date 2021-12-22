@@ -1,3 +1,9 @@
+:root {
+  --font-stack: sans-serif;
+  --background: hsl(0, 0%, 100%);
+  --graph-background: hsl(140, 10%, 15%);
+  --graph-text-color: hsl(140, 60%, 80%);
+}
 * {
   padding: 0;
   margin: 0;
@@ -5,8 +11,8 @@
 }
 
 html {
-  font-family: monospace;
-  font-size: 16px;
+  font-family: var(--font-stack);
+  font-size: 20px;
   font-weight: normal;
 }
 
@@ -18,7 +24,7 @@ html {
 
 body > header {
   padding: 2em;
-  background: #fff;
+  background: var(--background);
   display: flex;
   align-items: center;
 }
@@ -44,13 +50,16 @@ body > header > img {
 }
 
 main section h1 {
-  font-size: 1em;
+  font-size: 2em;
 }
 
 .graph {
-  background-color: #dee;
+  background: var(--graph-background);
   overflow: hidden;
   position: relative;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Tooltip */
@@ -70,14 +79,18 @@ main section h1 {
 g, #nodes text {
   pointer-events: none;
 }
-#nodes circle {
-  stroke: #111;
+#nodes {
+  stroke: hsl(0, 0%, 10%);
+  fill: hsl(0, 0%, 25%);
   stroke-width: 5px;
-  pointer-events: auto;
 }
 #nodes text {
-  font-size: 8pt;
-  fill: black;
+  font-size: 0.8rem;
+  stroke: none;
+  fill: var(--graph-text-color);
+}
+#nodes circle {
+  pointer-events: auto;
 }
 
 #nodes .domain {
