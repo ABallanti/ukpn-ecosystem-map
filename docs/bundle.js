@@ -7842,7 +7842,6 @@
 	    node.append('text').attr('text-anchor', 'right').attr('dominant-baseline', 'middle').attr('x', 20) // .attr('y', 0)
 	    // .attr('textLength', 20)
 	    .text(function (d) {
-	      console.dir(d.data);
 	      return d.data.name;
 	    });
 	    simulation$1.on('tick', function () {

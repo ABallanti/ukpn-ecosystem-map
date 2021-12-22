@@ -122,7 +122,6 @@ export const forceTree = (ecosystem, element) => {
       // .attr('y', 0)
       // .attr('textLength', 20)
       .text((d) => {
-        console.dir(d.data);
         return d.data.name;
       });
 
