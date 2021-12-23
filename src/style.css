@@ -68,7 +68,9 @@ main section h1 {
   overflow: hidden;
   position: relative;
   display: flex;
-  max-height: 800px;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #visualisation {
