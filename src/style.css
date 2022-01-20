@@ -124,15 +124,19 @@ g, #labels text {
 }
 
 #edges {
-  stroke: #999;
+  stroke: #bbb;
   stroke-opacity: 0.6;
-  stroke-width: 3px;
+  stroke-width: 2px;
 }
 
 #labels text {
   font-size: 0.8rem;
   fill: var(--graph-text-color);
 }
+#labels text.outer {
+  font-size: 0.6rem;
+}
+
 
 /* Tag cloud */
 .tag-cloud {

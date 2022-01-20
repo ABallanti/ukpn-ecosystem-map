@@ -7,11 +7,13 @@ import {
   forceX,
   forceY,
 } from 'd3-force';
-import { stratify } from 'd3-hierarchy';
-import { select, selectAll } from 'd3-selection';
+import { stratify, tree } from 'd3-hierarchy';
+import { create, select, selectAll } from 'd3-selection';
+import { linkRadial } from 'd3-shape';
 import { zoom } from 'd3-zoom';
 
 export {
+  create,
   csv,
   drag,
   forceLink,
@@ -19,8 +21,10 @@ export {
   forceSimulation,
   forceX,
   forceY,
+  linkRadial,
   select,
   selectAll,
   stratify,
+  tree,
   zoom,
 };
