@@ -12,7 +12,7 @@ const isExcluded = (d) => d.data.type === KEY_DATA_ENTITY;
 
 // https://observablehq.com/@d3/radial-tidy-tree
 export function radialTree(ecosystem) {
-  const width = 1000;
+  const width = 1200;
   const radius = width / 2;
 
   const tree = d3
@@ -25,7 +25,7 @@ export function radialTree(ecosystem) {
   // .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
   const root = tree(ecosystem);
-  const links = root.links().filter((d) => !isExcluded(d.source) && !isExcluded(d.target));
+  const links = root.links().filter((d) => !(d.source.depth === 0 || isExcluded(d.source) || isExcluded(d.target)));
   const nodes = root.descendants().filter((d) => !isExcluded(d));
   svg
     .append('g')
@@ -72,17 +72,24 @@ export function radialTree(ecosystem) {
       'transform',
       (d) => {
         if (d.depth === 1) return `rotate(${(d.x * 180) / Math.PI - 90}) translate(${d.y},0) rotate(-${(d.x * 180) / Math.PI - 90}) `;
-        if (d.depth === 2) return `rotate(${(d.x * 180) / Math.PI - 90}) translate(${d.y},0)`;
+        if (d.depth === 2) return `rotate(${(d.x * 180) / Math.PI - 90}) translate(${d.y},0) ${d.x > Math.PI ? 'rotate(180)' : '' }`;
       }
     )
     .classed('outer', (d) => d.depth === 2)
     .attr('dx', (d) => {
-      if (d.depth === 2) return '15px';
-      if (d.depth === 1) return '25px';
+      if (d.depth === 2) return `${d.x > Math.PI ? '-' : '' }15px`;
+      if (d.depth === 1) return `${d.x > Math.PI ? '-' : '' }25px`;
     })
-    .attr('dy', '0.31em')
+    .attr('dy', (d) => {
+      if (d.depth === 0) return '80px';
+      return '0.31em'
+    })
     // .attr('x', (d) => (d.x < Math.PI === !d.children ? 6 : -6))
-    // .attr('text-anchor', (d) => d.x < Math.PI === !d.children ? 'start' : 'end' )
+    .attr('text-anchor', (d) => {
+      if (d.depth === 2) return d.x > Math.PI === !d.children ? 'start' : 'end';
+      if (d.depth === 1) return d.x > Math.PI ? 'end' : 'start';      
+      if (d.depth === 0) return 'middle';
+    })
     .text((d) => d.data.name)
     .clone(true)
     .lower()

@@ -5446,7 +5446,7 @@
 
 
 	function radialTree(ecosystem) {
-	  var width = 1000;
+	  var width = 1200;
 	  var radius = width / 2;
 	  var tree$1 = tree().size([2 * Math.PI, radius]).separation(function (a, b) {
 	    return (a.parent == b.parent ? 1 : 2) / a.depth;
@@ -5455,7 +5455,7 @@
 
 	  var root = tree$1(ecosystem);
 	  var links = root.links().filter(function (d) {
-	    return !isExcluded(d.source) && !isExcluded(d.target);
+	    return !(d.source.depth === 0 || isExcluded(d.source) || isExcluded(d.target));
 	  });
 	  var nodes = root.descendants().filter(function (d) {
 	    return !isExcluded(d);
@@ -5477,15 +5477,21 @@
 	  });
 	  svg.append('g').attr('id', 'labels').selectAll('text').data(nodes).join('text').attr('transform', function (d) {
 	    if (d.depth === 1) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) rotate(-").concat(d.x * 180 / Math.PI - 90, ") ");
-	    if (d.depth === 2) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0)");
+	    if (d.depth === 2) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) ").concat(d.x > Math.PI ? 'rotate(180)' : '');
 	  }).classed('outer', function (d) {
 	    return d.depth === 2;
 	  }).attr('dx', function (d) {
-	    if (d.depth === 2) return '15px';
-	    if (d.depth === 1) return '25px';
-	  }).attr('dy', '0.31em') // .attr('x', (d) => (d.x < Math.PI === !d.children ? 6 : -6))
-	  // .attr('text-anchor', (d) => d.x < Math.PI === !d.children ? 'start' : 'end' )
-	  .text(function (d) {
+	    if (d.depth === 2) return "".concat(d.x > Math.PI ? '-' : '', "15px");
+	    if (d.depth === 1) return "".concat(d.x > Math.PI ? '-' : '', "25px");
+	  }).attr('dy', function (d) {
+	    if (d.depth === 0) return '80px';
+	    return '0.31em';
+	  }) // .attr('x', (d) => (d.x < Math.PI === !d.children ? 6 : -6))
+	  .attr('text-anchor', function (d) {
+	    if (d.depth === 2) return d.x > Math.PI === !d.children ? 'start' : 'end';
+	    if (d.depth === 1) return d.x > Math.PI ? 'end' : 'start';
+	    if (d.depth === 0) return 'middle';
+	  }).text(function (d) {
 	    return d.data.name;
 	  }).clone(true).lower().attr('stroke', 'white');
 	  svg.attr('viewBox', autoBox);

@@ -134,7 +134,7 @@ g, #labels text {
   fill: var(--graph-text-color);
 }
 #labels text.outer {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
 }
 
 
