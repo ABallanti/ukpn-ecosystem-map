@@ -5,7 +5,7 @@ import {
   forceManyBody,
   forceSimulation,
   forceX,
-  forceY
+  forceY,
 } from 'd3-force';
 import { stratify } from 'd3-hierarchy';
 import { select, selectAll } from 'd3-selection';

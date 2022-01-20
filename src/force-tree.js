@@ -1,14 +1,14 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
+import { setDefaultTooltipContent, showTooltip } from './components/tooltip';
+import { KEY_DATA_ENTITY } from './constants';
 
 const sparseness = 1000;
 const linkLength = 100;
 const linkStrength = 2;
 
-const KEY_DATA_ENTITY = 'key-data-entity';
-
 // https://observablehq.com/@d3/force-directed-tree?collection=@d3/d3-hierarchy
-export const forceTree = (ecosystem, element) => {
+export const forceTree = (ecosystem) => {
   const width = 1000;
   const height = 800;
   const minDepth = -1; // Set to 0 to exclude root
@@ -21,65 +21,11 @@ export const forceTree = (ecosystem, element) => {
   const allLinks = ecosystem.links().filter((d) => d.source.depth > minDepth && !isExcluded(d.source) && !isExcluded(d.target));
   const allNodes = ecosystem.descendants().filter((d) => d.depth > minDepth && !isExcluded(d));
 
-  const svg = element
-    .append('div')
-    .attr('id', 'visualisation')
-    .append('svg')
+  const svg = d3.create('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
-  const tooltip = element.append('div').attr('class', 'tooltip empty');
   const clearSelections = () => d3.selectAll('#nodes > g').classed('selected', false);
   const selectNode = (id) => d3.select(`#${id}`).classed('selected', true);
-  const showTooltip = (entity) => {
-    if (graph.locked && graph.locked !== entity.data.id) return;
-    const { id, name, type, description } = entity.data;
-    clearSelections();
-    selectNode(id);
-
-    const keyDataEntities = entity.descendants().filter(x => x.data.type === KEY_DATA_ENTITY);
-    const listKeyDataEntities = (list, heading) => {
-      if (list.length < 1) return '';
-      return `<h2>${ heading }</h2>
-      <ul class='tag-cloud'>
-        ${list.map(x => `<li>${x.data.name}</li>`).join('')}
-      </ul>`
-    }
-    const content = `
-      <article>
-        <h1>${name || id} (<em>${type}</em>)</h1>
-        <p>${description}</p>
-        ${listKeyDataEntities(keyDataEntities.filter(x => x.data.published === 'Y'), 'Published Key Data Entities')}
-        ${listKeyDataEntities(keyDataEntities.filter(x => x.data.published === 'N'), 'Unpublished Key Data Entities')}
-      </article>
-    `;
-    tooltip.classed('empty', false);
-    tooltip.html(content);
-  };
-
-  const setDefaultTooltipContent = () => {
-    const content = `
-      <article>
-      <h1>Instructions</h1>
-      <p>
-        Hover over a node to show the metadata.
-        Click a node to lock the current selection.
-      </p>
-      <p>
-        You can zoom and pan using your pointing device or touch.
-        Double clicking / tapping will zoom and recentre the visualisation.
-        Pressing shift and double clicking will zoom out.
-      </p>
-      </article>
-    `;
-    tooltip.html(content);
-  }
-  setDefaultTooltipContent();
-
-  const hideTooltip = (entity) => {
-    if (graph.locked) return;
-    clearSelections();
-    setDefaultTooltipContent();
-  };
 
   const toggleTooltipLock = (entity) => {
     if (graph.locked && graph.locked !== entity.data.id) {
@@ -120,8 +66,8 @@ export const forceTree = (ecosystem, element) => {
     const nodes = allNodes.filter(notCollapsing);
     const links = allLinks.filter(
       (l) => notCollapsing(l.source) && notCollapsing(l.target)
-    );
-
+      );
+      
     const simulation = d3
       .forceSimulation(nodes)
       .velocityDecay(0.4)
@@ -156,14 +102,23 @@ export const forceTree = (ecosystem, element) => {
 
     node
       .append('circle')
-      .classed('collapsed', d => d.collapsed)
+      .classed('collapsed', (d) => d.collapsed)
       .attr('r', 15)
       .call(drag(simulation))
       .on('click', (_, i) => toggleTooltipLock(i))
-      .on('mouseover', (_, i) => showTooltip(i))
-      .on('mouseout', (_, i) => hideTooltip(i));
+      .on('mouseover', (_, i) => {
+        if (graph.locked && graph.locked !== i.data.id) return;
+        clearSelections();
+        selectNode(i.data.id);
+        showTooltip(i);
+      })
+      .on('mouseout', (_) => {
+        if (graph.locked) return;
+        clearSelections();
+        setDefaultTooltipContent();
+      });
 
-    const label = graph.append('g').attr('id', 'labels').data(nodes).selectAll('g')
+    const label = graph.append('g').attr('id', 'labels').selectAll('g')
       .data(nodes)
       .join('g');
 
