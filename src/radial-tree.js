@@ -29,6 +29,7 @@ export function radialTree (ecosystem) {
   const root = tree(ecosystem);
   const links = root.links().filter((d) => !(d.source.depth === 0 || isExcluded(d.source) || isExcluded(d.target)));
   const nodes = root.descendants().filter((d) => !isExcluded(d));
+  const pathId = d => `${d.source.id}-${d.target.id}`;
   svg
     .append('g')
     .attr('id', 'edges')
@@ -36,6 +37,7 @@ export function radialTree (ecosystem) {
     .selectAll('path')
     .data(links)
     .join('path')
+    .attr('id', pathId)
     .attr(
       'd',
       d3
@@ -69,15 +71,17 @@ export function radialTree (ecosystem) {
       const selectNet = (n, top = false) => {
         const className = top ? 'selected' : 'selected child';
         selectNode(n.data.id, className);
-        if (!top) selectNode(n.data.id);
+        links.filter(x => x.source.id === n.id).forEach(l => selectNode(pathId(l)));
         if (n.children) n.children.forEach(c => selectNet(c));
       };
       clearSelections('#nodes > g', 'selected child');
+      clearSelections('#edges > path', 'selected');
       selectNet(i, true);
       showTooltip(i);
     })
     .on('mouseout', () => {
       clearSelections('#nodes > g', 'selected child');
+      clearSelections('#edges > path', 'selected');
       setDefaultTooltipContent();
     });
 

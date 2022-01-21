@@ -5297,38 +5297,6 @@
     }
   });
 
-  var fails$2 = fails$d;
-
-  var arrayMethodIsStrict$2 = function (METHOD_NAME, argument) {
-    var method = [][METHOD_NAME];
-    return !!method && fails$2(function () {
-      // eslint-disable-next-line no-useless-call,no-throw-literal -- required for testing
-      method.call(null, argument || function () {
-        throw 1;
-      }, 1);
-    });
-  };
-
-  var $$b = _export;
-  var uncurryThis$5 = functionUncurryThis;
-  var IndexedObject = indexedObject;
-  var toIndexedObject$3 = toIndexedObject$8;
-  var arrayMethodIsStrict$1 = arrayMethodIsStrict$2;
-  var un$Join = uncurryThis$5([].join);
-  var ES3_STRINGS = IndexedObject != Object;
-  var STRICT_METHOD$1 = arrayMethodIsStrict$1('join', ','); // `Array.prototype.join` method
-  // https://tc39.es/ecma262/#sec-array.prototype.join
-
-  $$b({
-    target: 'Array',
-    proto: true,
-    forced: ES3_STRINGS || !STRICT_METHOD$1
-  }, {
-    join: function join(separator) {
-      return un$Join(toIndexedObject$3(this), separator === undefined ? ',' : separator);
-    }
-  });
-
   var toPropertyKey$1 = toPropertyKey$4;
   var definePropertyModule$1 = objectDefineProperty;
   var createPropertyDescriptor$1 = createPropertyDescriptor$4;
@@ -5338,9 +5306,9 @@
     if (propertyKey in object) definePropertyModule$1.f(object, propertyKey, createPropertyDescriptor$1(0, value));else object[propertyKey] = value;
   };
 
-  var $$a = _export;
+  var $$b = _export;
   var global$a = global$B;
-  var fails$1 = fails$d;
+  var fails$2 = fails$d;
   var isArray$3 = isArray$5;
   var isObject$2 = isObject$9;
   var toObject$1 = toObject$5;
@@ -5357,7 +5325,7 @@
   // deoptimization and serious performance degradation
   // https://github.com/zloirock/core-js/issues/679
 
-  var IS_CONCAT_SPREADABLE_SUPPORT = V8_VERSION >= 51 || !fails$1(function () {
+  var IS_CONCAT_SPREADABLE_SUPPORT = V8_VERSION >= 51 || !fails$2(function () {
     var array = [];
     array[IS_CONCAT_SPREADABLE] = false;
     return array.concat()[0] !== array;
@@ -5374,7 +5342,7 @@
   // https://tc39.es/ecma262/#sec-array.prototype.concat
   // with adding support of @@isConcatSpreadable and @@species
 
-  $$a({
+  $$b({
     target: 'Array',
     proto: true,
     forced: FORCED
@@ -5402,6 +5370,38 @@
 
       A.length = n;
       return A;
+    }
+  });
+
+  var fails$1 = fails$d;
+
+  var arrayMethodIsStrict$2 = function (METHOD_NAME, argument) {
+    var method = [][METHOD_NAME];
+    return !!method && fails$1(function () {
+      // eslint-disable-next-line no-useless-call,no-throw-literal -- required for testing
+      method.call(null, argument || function () {
+        throw 1;
+      }, 1);
+    });
+  };
+
+  var $$a = _export;
+  var uncurryThis$5 = functionUncurryThis;
+  var IndexedObject = indexedObject;
+  var toIndexedObject$3 = toIndexedObject$8;
+  var arrayMethodIsStrict$1 = arrayMethodIsStrict$2;
+  var un$Join = uncurryThis$5([].join);
+  var ES3_STRINGS = IndexedObject != Object;
+  var STRICT_METHOD$1 = arrayMethodIsStrict$1('join', ','); // `Array.prototype.join` method
+  // https://tc39.es/ecma262/#sec-array.prototype.join
+
+  $$a({
+    target: 'Array',
+    proto: true,
+    forced: ES3_STRINGS || !STRICT_METHOD$1
+  }, {
+    join: function join(separator) {
+      return un$Join(toIndexedObject$3(this), separator === undefined ? ',' : separator);
     }
   });
 
@@ -6491,7 +6491,12 @@
     var nodes = root.descendants().filter(function (d) {
       return !isExcluded(d);
     });
-    svg.append('g').attr('id', 'edges').attr('fill', 'none').selectAll('path').data(links).join('path').attr('d', linkRadial().angle(function (d) {
+
+    var pathId = function pathId(d) {
+      return "".concat(d.source.id, "-").concat(d.target.id);
+    };
+
+    svg.append('g').attr('id', 'edges').attr('fill', 'none').selectAll('path').data(links).join('path').attr('id', pathId).attr('d', linkRadial().angle(function (d) {
       return d.x;
     }).radius(function (d) {
       return d.y;
@@ -6512,17 +6517,23 @@
         var top = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
         var className = top ? 'selected' : 'selected child';
         selectNode(n.data.id, className);
-        if (!top) selectNode(n.data.id);
+        links.filter(function (x) {
+          return x.source.id === n.id;
+        }).forEach(function (l) {
+          return selectNode(pathId(l));
+        });
         if (n.children) n.children.forEach(function (c) {
           return selectNet(c);
         });
       };
 
       clearSelections('#nodes > g', 'selected child');
+      clearSelections('#edges > path', 'selected');
       selectNet(i, true);
       showTooltip(i);
     }).on('mouseout', function () {
       clearSelections('#nodes > g', 'selected child');
+      clearSelections('#edges > path', 'selected');
       setDefaultTooltipContent();
     });
     svg.append('g').attr('id', 'labels').selectAll('text').data(nodes).join('text').attr('transform', function (d) {

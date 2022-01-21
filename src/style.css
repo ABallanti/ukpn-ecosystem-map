@@ -122,7 +122,10 @@ g, #labels text {
 
 #edges {
   stroke: #bbb;
-  stroke-opacity: 0.6;
+  stroke-width: 1px;
+}
+#edges .selected {
+  stroke: var(--parent-selected-node-border);
   stroke-width: 2px;
 }
 
