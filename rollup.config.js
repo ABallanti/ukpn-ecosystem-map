@@ -28,8 +28,7 @@ export default {
     if (
       warning.code === 'CIRCULAR_DEPENDENCY' &&
       warning.importer.match(new RegExp(modulesWithCircularDependencies.join('|')))
-    )
-      return;
+    ) { return; }
     warn(warning);
   },
   input: 'src/main.js',
