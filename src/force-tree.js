@@ -3,6 +3,7 @@ import { drag } from './components/drag';
 import { setDefaultTooltipContent, showTooltip } from './components/tooltip';
 import { selectNode, clearSelections } from './components/selection';
 import { KEY_DATA_ENTITY } from './constants';
+import { nodePath } from './components/node-path';
 
 const sparseness = 1000;
 const linkLength = 100;
@@ -140,13 +141,6 @@ export const forceTree = (ecosystem) => {
         .on('zoom', zoomed),
     );
   }
-
-  const nodePath = (d) =>
-    d
-      .ancestors()
-      .map((d) => d.data.id)
-      .reverse()
-      .join('/');
 
   update();
 

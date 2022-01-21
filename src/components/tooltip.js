@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { KEY_DATA_ENTITY } from '../constants';
+import { nodePath } from './node-path';
 
 export const tooltip = d3.create('aside').attr('class', 'tooltip empty');
 
@@ -30,7 +31,7 @@ export const showTooltip = (entity) => {
     if (list.length < 1) return '';
     return `<h2>${heading}</h2>
     <ul class='tag-cloud'>
-      ${list.map(x => `<li>${x.data.name}</li>`).join('')}
+      ${list.map(x => `<li>${nodePath(x, entity, 'name', ' :: ')}</li>`).join('')}
     </ul>`;
   };
   const content = `
