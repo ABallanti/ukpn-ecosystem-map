@@ -28,11 +28,11 @@ export const showTooltip = (entity) => {
   const keyDataEntities = entity.descendants().filter(x => x.data.type === KEY_DATA_ENTITY);
   const listKeyDataEntities = (list, heading) => {
     if (list.length < 1) return '';
-    return `<h2>${ heading }</h2>
+    return `<h2>${heading}</h2>
     <ul class='tag-cloud'>
       ${list.map(x => `<li>${x.data.name}</li>`).join('')}
-    </ul>`
-  }
+    </ul>`;
+  };
   const content = `
     <article>
       <h1>${name || id} (<em>${type}</em>)</h1>

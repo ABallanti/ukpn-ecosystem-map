@@ -25,6 +25,8 @@ export const forceTree = (ecosystem) => {
   const svg = d3.create('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
+  let graph;
+
   const toggleTooltipLock = (entity) => {
     if (graph.locked && graph.locked !== entity.data.id) {
       graph.locked = entity.data.id;
@@ -33,39 +35,18 @@ export const forceTree = (ecosystem) => {
     }
     if (graph.locked) graph.locked = undefined;
     else graph.locked = entity.data.id;
-  }
+  };
 
-  function collapseOrExpandChildren(d) {
-    if (!d.children) return;
-
-    // if (!d3.event.defaultPrevented) {
-    const inc = d.collapsed ? -1 : 1;
-    recurse(d);
-
-    function recurse(sourceNode) {
-      //check if link is from this node, and if so, collapse
-      allLinks.forEach(function (l) {
-        if (l.source.id === sourceNode.id) {
-          l.target.collapsing += inc;
-          recurse(l.target);
-        }
-      });
-    }
-    d.collapsed = !d.collapsed;
-    // }
-    update();
-  }
-
-  function update() {
+  function update () {
     svg.select('#graph').remove();
-    const graph = svg.append('g').attr('id', 'graph');
+    graph = svg.append('g').attr('id', 'graph');
 
-    const notCollapsing = (n) => n.collapsing == 0;
+    const notCollapsing = (n) => n.collapsing === 0;
     const nodes = allNodes.filter(notCollapsing);
     const links = allLinks.filter(
-      (l) => notCollapsing(l.source) && notCollapsing(l.target)
-      );
-      
+      (l) => notCollapsing(l.source) && notCollapsing(l.target),
+    );
+
     const simulation = d3
       .forceSimulation(nodes)
       .velocityDecay(0.4)
@@ -75,7 +56,7 @@ export const forceTree = (ecosystem) => {
           .forceLink(links)
           .id((d) => d.id)
           .distance(linkLength)
-          .strength(linkStrength)
+          .strength(linkStrength),
       )
       .force('charge', d3.forceManyBody().strength(-sparseness))
       .force('x', d3.forceX())
@@ -144,7 +125,7 @@ export const forceTree = (ecosystem) => {
 
     node.append('title').text((d) => nodePath(d));
 
-    function zoomed({ transform }) {
+    function zoomed ({ transform }) {
       graph.attr('transform', transform);
     }
 
@@ -156,7 +137,7 @@ export const forceTree = (ecosystem) => {
           [width, height],
         ])
         .scaleExtent([0.5, 4])
-        .on('zoom', zoomed)
+        .on('zoom', zoomed),
     );
   }
 

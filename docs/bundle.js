@@ -6058,7 +6058,7 @@
 	  var width = 1200;
 	  var radius = width / 2;
 	  var tree$1 = tree().size([2 * Math.PI, radius]).separation(function (a, b) {
-	    return (a.parent == b.parent ? 1 : 2) / a.depth;
+	    return (a.parent === b.parent ? 1 : 2) / a.depth;
 	  });
 	  var svg = create$1('svg'); // .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
