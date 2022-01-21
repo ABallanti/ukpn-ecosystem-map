@@ -1,4 +1,4 @@
-import { drag as d3drag } from '../lib/d3';
+import * as d3 from 'd3';
 
 export const drag = (simulation) => {
   function dragstarted (event, d) {
@@ -18,7 +18,7 @@ export const drag = (simulation) => {
     d.fy = null;
   }
 
-  return d3drag()
+  return d3.drag()
     .on('start', dragstarted)
     .on('drag', dragged)
     .on('end', dragended);

@@ -1,4 +1,4 @@
-import * as d3 from '../lib/d3';
+import * as d3 from 'd3';
 import { KEY_DATA_ENTITY } from '../constants';
 
 export const tooltip = d3.create('aside').attr('class', 'tooltip empty');

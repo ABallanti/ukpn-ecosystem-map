@@ -1,4 +1,4 @@
-import * as d3 from './lib/d3';
+import * as d3 from 'd3';
 import { drag } from './components/drag';
 import { setDefaultTooltipContent, showTooltip } from './components/tooltip';
 import { selectNode, clearSelections } from './components/selection';
