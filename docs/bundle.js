@@ -2860,6 +2860,10 @@
 	  return select(creator(name).call(document.documentElement));
 	}
 
+	function selectAll (selector) {
+	  return typeof selector === "string" ? new Selection$1([document.querySelectorAll(selector)], [document.documentElement]) : new Selection$1([array(selector)], root);
+	}
+
 	var EOL = {},
 	    EOF = {},
 	    QUOTE = 34,
@@ -5427,76 +5431,13 @@
 
 	var KEY_DATA_ENTITY = 'key-data-entity';
 
-	function autoBox() {
-	  document.body.appendChild(this);
-
-	  var _this$getBBox = this.getBBox(),
-	      x = _this$getBBox.x,
-	      y = _this$getBBox.y,
-	      width = _this$getBBox.width,
-	      height = _this$getBBox.height;
-
-	  document.body.removeChild(this);
-	  return [x, y, width, height];
-	}
-
-	var isExcluded = function isExcluded(d) {
-	  return d.data.type === KEY_DATA_ENTITY;
-	}; // https://observablehq.com/@d3/radial-tidy-tree
-
-
-	function radialTree(ecosystem) {
-	  var width = 1200;
-	  var radius = width / 2;
-	  var tree$1 = tree().size([2 * Math.PI, radius]).separation(function (a, b) {
-	    return (a.parent == b.parent ? 1 : 2) / a.depth;
-	  });
-	  var svg = create$1('svg'); // .attr('viewBox', [-width / 2, -height / 2, width, height]);
-
-	  var root = tree$1(ecosystem);
-	  var links = root.links().filter(function (d) {
-	    return !(d.source.depth === 0 || isExcluded(d.source) || isExcluded(d.target));
-	  });
-	  var nodes = root.descendants().filter(function (d) {
-	    return !isExcluded(d);
-	  });
-	  svg.append('g').attr('id', 'edges').attr('fill', 'none').selectAll('path').data(links).join('path').attr('d', linkRadial().angle(function (d) {
-	    return d.x;
-	  }).radius(function (d) {
-	    return d.y;
-	  }));
-	  svg.append('g').attr('id', 'nodes').selectAll('circle').data(nodes).join('circle').attr('transform', function (d) {
-	    return "\n      rotate(".concat(d.x * 180 / Math.PI - 90, ")\n      translate(").concat(d.y, ",0)\n    ");
-	  }).attr('class', function (d) {
-	    return d.data.type;
-	  }).attr('r', function (_ref) {
-	    var depth = _ref.depth;
-	    if (depth === 0) return 60;
-	    if (depth === 1) return 20;
-	    return 10;
-	  });
-	  svg.append('g').attr('id', 'labels').selectAll('text').data(nodes).join('text').attr('transform', function (d) {
-	    if (d.depth === 1) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) rotate(-").concat(d.x * 180 / Math.PI - 90, ") ");
-	    if (d.depth === 2) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) ").concat(d.x > Math.PI ? 'rotate(180)' : '');
-	  }).classed('outer', function (d) {
-	    return d.depth === 2;
-	  }).attr('dx', function (d) {
-	    if (d.depth === 2) return "".concat(d.x > Math.PI ? '-' : '', "15px");
-	    if (d.depth === 1) return "".concat(d.x > Math.PI ? '-' : '', "25px");
-	  }).attr('dy', function (d) {
-	    if (d.depth === 0) return '80px';
-	    return '0.31em';
-	  }) // .attr('x', (d) => (d.x < Math.PI === !d.children ? 6 : -6))
-	  .attr('text-anchor', function (d) {
-	    if (d.depth === 2) return d.x > Math.PI === !d.children ? 'start' : 'end';
-	    if (d.depth === 1) return d.x > Math.PI ? 'end' : 'start';
-	    if (d.depth === 0) return 'middle';
-	  }).text(function (d) {
-	    return d.data.name;
-	  }).clone(true).lower().attr('stroke', 'white');
-	  svg.attr('viewBox', autoBox);
-	  return svg.node();
-	}
+	var selectNode = function selectNode(id) {
+	  return select("#".concat(id)).classed('selected', true);
+	};
+	var clearSelections = function clearSelections() {
+	  var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '#nodes > g';
+	  return selectAll(selector).classed('selected', false);
+	};
 
 	var global$4 = global$w;
 	var classof$1 = classof$4;
@@ -6066,9 +6007,114 @@
 	  tooltip.html(content);
 	};
 	setDefaultTooltipContent();
+	var showTooltip = function showTooltip(entity) {
+	  var _entity$data = entity.data,
+	      id = _entity$data.id,
+	      name = _entity$data.name,
+	      type = _entity$data.type,
+	      description = _entity$data.description;
+	  var keyDataEntities = entity.descendants().filter(function (x) {
+	    return x.data.type === KEY_DATA_ENTITY;
+	  });
+
+	  var listKeyDataEntities = function listKeyDataEntities(list, heading) {
+	    if (list.length < 1) return '';
+	    return "<h2>".concat(heading, "</h2>\n    <ul class='tag-cloud'>\n      ").concat(list.map(function (x) {
+	      return "<li>".concat(x.data.name, "</li>");
+	    }).join(''), "\n    </ul>");
+	  };
+
+	  var content = "\n    <article>\n      <h1>".concat(name || id, " (<em>").concat(type, "</em>)</h1>\n      <p>").concat(description, "</p>\n      ").concat(listKeyDataEntities(keyDataEntities.filter(function (x) {
+	    return x.data.published === 'Y';
+	  }), 'Published Key Data Entities'), "\n      ").concat(listKeyDataEntities(keyDataEntities.filter(function (x) {
+	    return x.data.published === 'N';
+	  }), 'Unpublished Key Data Entities'), "\n    </article>\n  ");
+	  tooltip.classed('empty', false);
+	  tooltip.html(content);
+	};
 	var tooltipNode = function tooltipNode() {
 	  return tooltip.node();
 	};
+
+	function autoBox() {
+	  document.body.appendChild(this);
+
+	  var _this$getBBox = this.getBBox(),
+	      x = _this$getBBox.x,
+	      y = _this$getBBox.y,
+	      width = _this$getBBox.width,
+	      height = _this$getBBox.height;
+
+	  document.body.removeChild(this);
+	  return [x, y, width, height];
+	}
+
+	var isExcluded = function isExcluded(d) {
+	  return d.data.type === KEY_DATA_ENTITY;
+	}; // https://observablehq.com/@d3/radial-tidy-tree
+
+
+	function radialTree(ecosystem) {
+	  var width = 1200;
+	  var radius = width / 2;
+	  var tree$1 = tree().size([2 * Math.PI, radius]).separation(function (a, b) {
+	    return (a.parent == b.parent ? 1 : 2) / a.depth;
+	  });
+	  var svg = create$1('svg'); // .attr('viewBox', [-width / 2, -height / 2, width, height]);
+
+	  var root = tree$1(ecosystem);
+	  var links = root.links().filter(function (d) {
+	    return !(d.source.depth === 0 || isExcluded(d.source) || isExcluded(d.target));
+	  });
+	  var nodes = root.descendants().filter(function (d) {
+	    return !isExcluded(d);
+	  });
+	  svg.append('g').attr('id', 'edges').attr('fill', 'none').selectAll('path').data(links).join('path').attr('d', linkRadial().angle(function (d) {
+	    return d.x;
+	  }).radius(function (d) {
+	    return d.y;
+	  }));
+	  svg.append('g').attr('id', 'nodes').selectAll('circle').data(nodes).join('g').attr('id', function (d) {
+	    return d.data.id;
+	  }).attr('class', function (d) {
+	    return d.data.type;
+	  }).append('circle').attr('transform', function (d) {
+	    return "\n      rotate(".concat(d.x * 180 / Math.PI - 90, ")\n      translate(").concat(d.y, ",0)\n    ");
+	  }).attr('r', function (_ref) {
+	    var depth = _ref.depth;
+	    if (depth === 0) return 60;
+	    if (depth === 1) return 20;
+	    return 10;
+	  }).on('mouseover', function (_, i) {
+	    clearSelections();
+	    selectNode(i.data.id);
+	    showTooltip(i);
+	  }).on('mouseout', function () {
+	    clearSelections();
+	    setDefaultTooltipContent();
+	  });
+	  svg.append('g').attr('id', 'labels').selectAll('text').data(nodes).join('text').attr('transform', function (d) {
+	    if (d.depth === 1) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) rotate(-").concat(d.x * 180 / Math.PI - 90, ") ");
+	    if (d.depth === 2) return "rotate(".concat(d.x * 180 / Math.PI - 90, ") translate(").concat(d.y, ",0) ").concat(d.x > Math.PI ? 'rotate(180)' : '');
+	  }).classed('outer', function (d) {
+	    return d.depth === 2;
+	  }).attr('dx', function (d) {
+	    if (d.depth === 2) return "".concat(d.x > Math.PI ? '-' : '', "15px");
+	    if (d.depth === 1) return "".concat(d.x > Math.PI ? '-' : '', "25px");
+	  }).attr('dy', function (d) {
+	    if (d.depth === 0) return '80px';
+	    return '0.31em';
+	  }) // .attr('x', (d) => (d.x < Math.PI === !d.children ? 6 : -6))
+	  .attr('text-anchor', function (d) {
+	    if (d.depth === 2) return d.x > Math.PI === !d.children ? 'start' : 'end';
+	    if (d.depth === 1) return d.x > Math.PI ? 'end' : 'start';
+	    if (d.depth === 0) return 'middle';
+	  }).text(function (d) {
+	    return d.data.name;
+	  }).clone(true).lower().attr('stroke', 'white');
+	  svg.attr('viewBox', autoBox);
+	  return svg.node();
+	}
 
 	csv('ecosystem-tree.csv').then(function (data) {
 	  var ecosystem = stratify().id(function (x) {

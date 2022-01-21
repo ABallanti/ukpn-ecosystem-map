@@ -1,5 +1,7 @@
 import * as d3 from './lib/d3';
 import { KEY_DATA_ENTITY } from './constants';
+import { selectNode, clearSelections } from './components/selection';
+import { setDefaultTooltipContent, showTooltip } from './components/tooltip';
 
 function autoBox() {
   document.body.appendChild(this);
@@ -47,7 +49,10 @@ export function radialTree(ecosystem) {
     .attr('id', 'nodes')
     .selectAll('circle')
     .data(nodes)
-    .join('circle')
+    .join('g')
+    .attr('id', (d) => d.data.id)
+    .attr('class', (d) => d.data.type)
+    .append('circle')
     .attr(
       'transform',
       (d) => `
@@ -55,11 +60,19 @@ export function radialTree(ecosystem) {
       translate(${d.y},0)
     `
     )
-    .attr('class', (d) => d.data.type)
     .attr('r', ({depth}) => {
       if ( depth === 0 ) return 60;
       if ( depth === 1 ) return 20;
       return 10;
+    })
+    .on('mouseover', (_, i) => {
+      clearSelections();
+      selectNode(i.data.id);
+      showTooltip(i);
+    })
+    .on('mouseout', () => {
+      clearSelections();
+      setDefaultTooltipContent();
     });
 
   svg

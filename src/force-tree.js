@@ -1,6 +1,7 @@
 import * as d3 from './lib/d3';
 import { drag } from './components/drag';
 import { setDefaultTooltipContent, showTooltip } from './components/tooltip';
+import { selectNode, clearSelections } from './components/selection';
 import { KEY_DATA_ENTITY } from './constants';
 
 const sparseness = 1000;
@@ -23,9 +24,6 @@ export const forceTree = (ecosystem) => {
 
   const svg = d3.create('svg')
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
-
-  const clearSelections = () => d3.selectAll('#nodes > g').classed('selected', false);
-  const selectNode = (id) => d3.select(`#${id}`).classed('selected', true);
 
   const toggleTooltipLock = (entity) => {
     if (graph.locked && graph.locked !== entity.data.id) {
