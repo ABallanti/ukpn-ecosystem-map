@@ -9,6 +9,7 @@
   --tier-3-colour: hsl(29, 93%, 44%);
   --tier-4-colour: hsl(36, 100%, 48%);
   --selected-node-border: black;
+  --parent-selected-node-border: rgb(75, 75, 75);
 }
 * {
   padding: 0;
@@ -105,6 +106,9 @@ g, #labels text {
 #nodes .selected circle {
   stroke: var(--selected-node-border);
   stroke-width: 5px;
+}
+#nodes .selected.child circle {
+  stroke: var(--parent-selected-node-border);
 }
 #nodes .root {
   fill: var(--tier-1-colour);

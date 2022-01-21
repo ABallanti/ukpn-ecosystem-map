@@ -66,12 +66,18 @@ export function radialTree (ecosystem) {
       return 10;
     })
     .on('mouseover', (_, i) => {
-      clearSelections();
-      selectNode(i.data.id);
+      const selectNet = (n, top = false) => {
+        const className = top ? 'selected' : 'selected child';
+        selectNode(n.data.id, className);
+        if (!top) selectNode(n.data.id);
+        if (n.children) n.children.forEach(c => selectNet(c));
+      };
+      clearSelections('#nodes > g', 'selected child');
+      selectNet(i, true);
       showTooltip(i);
     })
     .on('mouseout', () => {
-      clearSelections();
+      clearSelections('#nodes > g', 'selected child');
       setDefaultTooltipContent();
     });
 
