@@ -152,3 +152,19 @@ g, #labels text {
   border-radius: 1em;
   padding: 0.2em 0.6em;
 }
+#issuer-root { 
+  /* Example formatting for parent */
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  border: 1px solid gray;
+  background: white;
+}
+.issuer {
+  width: 30em;
+  /* Variable overrides - set at :root in issuer.css */
+  --issuer-header-fg: hsl(0, 0%, 100%);
+  --issuer-header-bg: hsl(325, 69%, 48%);
+  --issuer-font-size: 0.8rem;
+  --issuer-error-colour: hsl(0, 75%, 50%);
+}

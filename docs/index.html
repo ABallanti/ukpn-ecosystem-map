@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UKPN Internal Data Ecosystem Map</title>
     <link rel="stylesheet" href="style.css" />
+    <script
+      defer
+      src="//cdn.jsdelivr.net/gh/open-innovations/issuer/lib/issuer.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/open-innovations/issuer/lib/issuer.css"
+    />
   </head>
 
   <body>
@@ -19,6 +27,7 @@
     <main role="main" class="full-width">
       <article id="tree" class="graph"></article>
     </main>
+    <aside id="issuer-root"></aside>
     <footer class="page-footer">
       <div class="centre-column">
         <p>
@@ -28,5 +37,16 @@
       </div>
     </footer>
     <script src="bundle.js"></script>
+    <script>
+      // Attach the issue form component passing the required config
+      addEventListener('DOMContentLoaded', function () {
+        oi.issuer({
+          target: document.querySelector('#issuer-root'),
+          endpoint: 'https://8098cec81e241af408f7acc6b778cfd4.m.pipedream.net',
+          owner: 'open-innovations',
+          repo: 'ukpn-ecosystem-map',
+        });
+      });
+    </script>
   </body>
 </html>
