@@ -67,10 +67,15 @@ main section h1 {
 #tree {
   background: var(--graph-background);
   overflow: hidden;
-  display: flex;
   max-width: 1600px;
   margin-left: auto;
   margin-right: auto;
+}
+
+@media (min-width: 576px) {
+  #tree {
+    display: flex;
+  }
 }
 
 #visualisation svg {
@@ -156,15 +161,24 @@ g, #labels text {
   /* Example formatting for parent */
   position: fixed;
   bottom: 0;
+  left: 0;
   right: 0;
   border: 1px solid gray;
   background: white;
+  z-index: 10;
 }
 .issuer {
-  width: 30em;
   /* Variable overrides - set at :root in issuer.css */
   --issuer-header-fg: hsl(0, 0%, 100%);
   --issuer-header-bg: hsl(325, 69%, 48%);
   --issuer-font-size: 0.8rem;
   --issuer-error-colour: hsl(0, 75%, 50%);
+}
+@media (min-width: 576px) {
+  #issuer-root {
+    left: initial;
+  }
+  .issuer {
+    width: 30em;
+  }
 }
