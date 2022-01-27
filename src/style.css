@@ -78,6 +78,10 @@ main section h1 {
   }
 }
 
+#visualisation {
+  flex-grow: 2;
+}
+
 #visualisation svg {
   padding: 1em;
 }
